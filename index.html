@@ -1,1 +1,727 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AV-Depot Rechner 2027 – Depot-Vergleich</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #0B6E4F;
+      --green-light: #E8F5F0;
+      --green-mid: #1D9E75;
+      --blue: #1A4FA0;
+      --blue-light: #EAF0FB;
+      --grey: #6B6B6B;
+      --grey-light: #F2F2EF;
+      --red-soft: #FBE9E8;
+      --red: #B33A2A;
+      --ink: #1A1A1A;
+      --ink-mid: #3D3D3D;
+      --ink-light: #767676;
+      --border: #E2E2DC;
+      --bg: #FAFAF7;
+      --white: #FFFFFF;
+      --radius: 10px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      color: var(--ink);
+      letter-spacing: -0.3px;
+    }
+    .logo span { color: var(--green); }
+    .header-badge {
+      font-size: 11px;
+      background: var(--green-light);
+      color: var(--green);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-weight: 500;
+    }
+
+    /* HERO */
+    .hero {
+      background: var(--white);
+      padding: 3rem 2rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .hero-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--green);
+      margin-bottom: 10px;
+    }
+    .hero h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(26px, 4vw, 40px);
+      line-height: 1.15;
+      color: var(--ink);
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+    .hero p {
+      font-size: 15px;
+      color: var(--ink-light);
+      max-width: 580px;
+      line-height: 1.6;
+    }
+    .hero-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 1.25rem;
+    }
+    .pill {
+      font-size: 12px;
+      background: var(--grey-light);
+      color: var(--ink-mid);
+      border-radius: 20px;
+      padding: 4px 12px;
+    }
+    .pill.green { background: var(--green-light); color: var(--green); }
+
+    /* MAIN */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* SECTION */
+    .section { margin-bottom: 2.5rem; }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--ink-light);
+      margin-bottom: 14px;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+
+    /* INPUT GRID */
+    .input-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink-light);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .field input[type=number] {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+    .field input[type=number]:focus { outline: none; border-color: var(--green-mid); }
+    .slider-wrap { display: flex; align-items: center; gap: 10px; }
+    .slider-wrap input[type=range] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      cursor: pointer;
+    }
+    .slider-wrap input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      background: var(--green-mid);
+      border-radius: 50%;
+      border: 2px solid var(--white);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .slider-val {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      min-width: 48px;
+      text-align: right;
+    }
+    .kinder-row { display: flex; align-items: center; gap: 10px; margin-top: 2px; }
+    .kbtn {
+      width: 32px; height: 32px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-mid);
+      transition: background 0.1s;
+    }
+    .kbtn:hover { background: var(--grey-light); }
+    .kcount { font-size: 16px; font-weight: 600; min-width: 24px; text-align: center; }
+
+    /* FOERDER GRID */
+    .foerder-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .foerder-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+    .foerder-card-label { font-size: 11px; color: var(--ink-light); margin-bottom: 4px; }
+    .foerder-card-val { font-size: 20px; font-weight: 600; color: var(--ink); }
+    .foerder-card-sub { font-size: 11px; margin-top: 3px; }
+    .foerder-card.green .foerder-card-val { color: var(--green); }
+    .foerder-card.blue .foerder-card-val { color: var(--blue); }
+
+    /* DEPOT CARDS */
+    .depot-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .depot-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      transition: box-shadow 0.2s;
+    }
+    .depot-card:hover { box-shadow: var(--shadow); }
+    .depot-card.d1 { border-top: 3px solid var(--grey); }
+    .depot-card.d2 { border-top: 3px solid var(--blue); }
+    .depot-card.d3 { border-top: 3px solid var(--green-mid); }
+
+    .depot-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      margin-bottom: 4px;
+    }
+    .d1 .depot-num { color: var(--grey); }
+    .d2 .depot-num { color: var(--blue); }
+    .d3 .depot-num { color: var(--green-mid); }
+
+    .depot-name { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+    .depot-sub { font-size: 12px; color: var(--ink-light); margin-bottom: 12px; }
+
+    .depot-kosten-block { margin-bottom: 12px; }
+    .depot-kosten-label {
+      font-size: 11px;
+      color: var(--ink-light);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .depot-kosten-label strong { color: var(--ink); font-weight: 600; }
+    .depot-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      cursor: pointer;
+    }
+    .d1 .depot-slider::-webkit-slider-thumb { -webkit-appearance: none; width:16px;height:16px;background:var(--grey);border-radius:50%;border:2px solid var(--white);box-shadow:0 1px 4px rgba(0,0,0,0.15); }
+    .d2 .depot-slider::-webkit-slider-thumb { -webkit-appearance: none; width:16px;height:16px;background:var(--blue);border-radius:50%;border:2px solid var(--white);box-shadow:0 1px 4px rgba(0,0,0,0.15); }
+    .d3 .depot-slider::-webkit-slider-thumb { -webkit-appearance: none; width:16px;height:16px;background:var(--green-mid);border-radius:50%;border:2px solid var(--white);box-shadow:0 1px 4px rgba(0,0,0,0.15); }
+    .depot-slider-range { display:flex;justify-content:space-between;font-size:10px;color:var(--ink-light);margin-top:3px; }
+
+    .depot-feature {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      padding: 5px 0;
+      border-top: 1px solid var(--grey-light);
+      color: var(--ink-light);
+    }
+    .depot-feature span:last-child { font-weight: 500; }
+    .check { color: var(--green); font-weight: 600; }
+    .cross { color: var(--red); font-weight: 600; }
+
+    /* RESULT CARDS */
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 2rem;
+    }
+    .result-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+    }
+    .result-card.best { border-color: var(--green-mid); box-shadow: 0 0 0 2px var(--green-light); }
+    .result-card .rc-label { font-size: 12px; color: var(--ink-light); margin-bottom: 8px; font-weight: 500; }
+    .result-card .rc-val {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .d1 .rc-val { color: var(--grey); }
+    .d2 .rc-val { color: var(--blue); }
+    .d3 .rc-val { color: var(--green); }
+    .result-card .rc-sub { font-size: 11px; color: var(--ink-light); }
+    .result-card .rc-delta {
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+    .delta-pos { background: var(--green-light); color: var(--green); }
+    .delta-neg { background: var(--red-soft); color: var(--red); }
+    .delta-neu { background: var(--grey-light); color: var(--grey); }
+
+    /* CHART */
+    .chart-container {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-mid); }
+    .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+    .chart-canvas-wrap { position: relative; height: 300px; }
+
+    /* DISCLAIMER */
+    .disclaimer {
+      background: var(--grey-light);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      font-size: 12px;
+      color: var(--ink-light);
+      line-height: 1.7;
+    }
+    .disclaimer strong { color: var(--ink-mid); }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 12px;
+      color: var(--ink-light);
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 680px) {
+      main { padding: 1.25rem; }
+      .hero { padding: 2rem 1.25rem; }
+      .depot-grid, .result-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">AV<span>·</span>Rechner</div>
+  <div class="header-badge">Förderlogik ab 01.01.2027</div>
+</header>
+
+<div class="hero">
+  <div class="hero-eyebrow">Altersvorsorgereformgesetz · Bundestag beschlossen 27.03.2026</div>
+  <h1>Drei Depot-Varianten.<br>Ein Vergleich.</h1>
+  <p>Berechnen Sie, wie freies ETF-Depot, DIY AV-Depot und betreutes AV-Depot im direkten Vergleich abschneiden – inklusive Zulagen, Steuerstundung und realer Kostenlogik.</p>
+  <div class="hero-pills">
+    <span class="pill green">Grundzulage bis 540 €/Jahr</span>
+    <span class="pill green">Kinderzulage bis 300 €/Kind</span>
+    <span class="pill">Kosten auf Depotvolumen</span>
+    <span class="pill">Keine Abgeltungssteuer im AV-Depot</span>
+  </div>
+</div>
+
+<main>
+
+  <!-- KUNDENDATEN -->
+  <div class="section">
+    <div class="section-label">Kundendaten</div>
+    <div class="input-grid">
+      <div class="field">
+        <label>Eigenbeitrag / Jahr (€)</label>
+        <input type="number" id="beitrag" value="1200" min="120" max="6840" step="60">
+      </div>
+      <div class="field">
+        <label>Kinder (kindergeldberechtigt)</label>
+        <div class="kinder-row">
+          <button class="kbtn" id="km">−</button>
+          <span class="kcount" id="kv">1</span>
+          <button class="kbtn" id="kp">+</button>
+          <span style="font-size:13px;color:var(--ink-light)">Kind(er)</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Grenzsteuersatz</label>
+        <div class="slider-wrap">
+          <input type="range" id="steuer" min="0" max="45" step="1" value="30">
+          <span class="slider-val" id="steuer-val">30%</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Alter</label>
+        <input type="number" id="alter" value="35" min="18" max="67" step="1">
+      </div>
+      <div class="field">
+        <label>Renteneintritt mit</label>
+        <input type="number" id="rentenalter" value="67" min="60" max="70" step="1">
+      </div>
+      <div class="field">
+        <label>Bruttorendite p.a.</label>
+        <div class="slider-wrap">
+          <input type="range" id="rendite" min="2" max="9" step="0.5" value="6">
+          <span class="slider-val" id="rendite-val">6,0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- FÖRDERUNG -->
+  <div class="section">
+    <div class="section-label">Staatliche Förderung (gilt für Depot ② & ③)</div>
+    <div class="foerder-grid">
+      <div class="foerder-card green">
+        <div class="foerder-card-label">Grundzulage / Jahr → Depot</div>
+        <div class="foerder-card-val" id="f-gz">—</div>
+        <div class="foerder-card-sub" style="color:var(--green)">max. 540 €, via ZfA</div>
+      </div>
+      <div class="foerder-card green">
+        <div class="foerder-card-label">Kinderzulage / Jahr → Depot</div>
+        <div class="foerder-card-val" id="f-kz">—</div>
+        <div class="foerder-card-sub" id="f-kz-sub" style="color:var(--green)">je Kind max. 300 €</div>
+      </div>
+      <div class="foerder-card green">
+        <div class="foerder-card-label">Gesamtbeitrag im Depot / Jahr</div>
+        <div class="foerder-card-val" id="f-depot">—</div>
+        <div class="foerder-card-sub" style="color:var(--green)">Eigen + Zulagen</div>
+      </div>
+      <div class="foerder-card blue">
+        <div class="foerder-card-label">Steuervorteil → an Kunden</div>
+        <div class="foerder-card-val" id="f-sv">—</div>
+        <div class="foerder-card-sub" style="color:var(--blue)">Steuererstattung, nicht im Depot</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- DEPOT KONFIGURATION -->
+  <div class="section">
+    <div class="section-label">Depot-Konfiguration & Effektivkosten (auf Depotvolumen)</div>
+    <div class="depot-grid">
+
+      <div class="depot-card d1">
+        <div class="depot-num">①</div>
+        <div class="depot-name">Freies ETF-Depot</div>
+        <div class="depot-sub">Neobroker · Keine AV-Förderung</div>
+        <div class="depot-kosten-block">
+          <div class="depot-kosten-label">
+            <span>Effektivkosten p.a.</span>
+            <strong id="k1-val">0,20%</strong>
+          </div>
+          <input type="range" class="depot-slider" id="k1" min="0.1" max="0.5" step="0.05" value="0.2">
+          <div class="depot-slider-range"><span>0,1%</span><span>0,5%</span></div>
+        </div>
+        <div class="depot-feature"><span>Zulagen</span><span class="cross">✗</span></div>
+        <div class="depot-feature"><span>Steuerstundung</span><span class="cross">✗</span></div>
+        <div class="depot-feature"><span>Abgeltungssteuer</span><span class="cross">~25% + Soli</span></div>
+        <div class="depot-feature"><span>Beratung</span><span class="cross">✗</span></div>
+        <div class="depot-feature"><span>Anlagefreiheit</span><span class="check">Voll</span></div>
+      </div>
+
+      <div class="depot-card d2">
+        <div class="depot-num">②</div>
+        <div class="depot-name">DIY AV-Depot</div>
+        <div class="depot-sub">Neobroker · Mit AV-Förderung</div>
+        <div class="depot-kosten-block">
+          <div class="depot-kosten-label">
+            <span>Effektivkosten p.a.</span>
+            <strong id="k2-val">0,30%</strong>
+          </div>
+          <input type="range" class="depot-slider" id="k2" min="0.2" max="1.0" step="0.05" value="0.3">
+          <div class="depot-slider-range"><span>0,2%</span><span>1,0% (Deckel)</span></div>
+        </div>
+        <div class="depot-feature"><span>Zulagen (ZfA → Depot)</span><span class="check">✓</span></div>
+        <div class="depot-feature"><span>Steuerstundung</span><span class="check">✓</span></div>
+        <div class="depot-feature"><span>Abgeltungssteuer</span><span class="check">✗ (Anspar)</span></div>
+        <div class="depot-feature"><span>Beratung</span><span class="cross">✗</span></div>
+        <div class="depot-feature"><span>Anlage UCITS-ETFs</span><span class="check">✓</span></div>
+      </div>
+
+      <div class="depot-card d3">
+        <div class="depot-num">③</div>
+        <div class="depot-name">Betreutes AV-Depot</div>
+        <div class="depot-sub">Mit Beratung & Betreuung</div>
+        <div class="depot-kosten-block">
+          <div class="depot-kosten-label">
+            <span>Effektivkosten p.a.</span>
+            <strong id="k3-val">1,00%</strong>
+          </div>
+          <input type="range" class="depot-slider" id="k3" min="0.8" max="1.2" step="0.05" value="1.0">
+          <div class="depot-slider-range"><span>0,8%</span><span>1,2%</span></div>
+        </div>
+        <div class="depot-feature"><span>Zulagen (ZfA → Depot)</span><span class="check">✓</span></div>
+        <div class="depot-feature"><span>Steuerstundung</span><span class="check">✓</span></div>
+        <div class="depot-feature"><span>Abgeltungssteuer</span><span class="check">✗ (Anspar)</span></div>
+        <div class="depot-feature"><span>Beratung & Betreuung</span><span class="check">✓</span></div>
+        <div class="depot-feature"><span>Strategie & Rebalancing</span><span class="check">✓</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- ERGEBNISSE -->
+  <div class="section">
+    <div class="section-label">Endkapital im Vergleich</div>
+    <div class="result-grid" id="result-grid"></div>
+
+    <div class="chart-container">
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--grey)"></div>① Freies ETF-Depot</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>② DIY AV-Depot</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green-mid)"></div>③ Betreutes AV-Depot</div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- DISCLAIMER -->
+  <div class="disclaimer">
+    <strong>Hinweise zur Berechnung</strong><br>
+    <strong>Depot ①:</strong> Abgeltungssteuer (26,375% inkl. Soli) vereinfacht als pauschale Renditeminderung von ~0,5% p.a. eingerechnet. Vorabpauschale vernachlässigt. Effektivkosten und Abgeltungssteuer-Malus reduzieren die Nettorendite auf das Depotvolumen.<br>
+    <strong>Depot ② & ③:</strong> Zulagen (Grund- + Kinderzulage) fließen von der ZfA direkt ins Depot und werden als Teil des jährlichen Einzahlungsbetrags behandelt. Effektivkosten reduzieren ausschließlich die Nettorendite auf das Depotvolumen – keine ratierlichen Beitragsabzüge. Keine Abgeltungssteuer in der Ansparphase. <strong>Steuervorteil</strong> aus der Günstigerprüfung ist eine Steuererstattung an den Kunden und nicht im Depot enthalten.<br>
+    <strong>Nachgelagerte Besteuerung</strong> der AV-Depot-Auszahlung ist nicht eingerechnet und wirkt gegenläufig. Förderlogik nach Altersvorsorgereformgesetz (Bundestag, 27.03.2026). Produktstart 01.01.2027. Bundesrat-Zustimmung ausstehend. Keine Anlageberatung.
+  </div>
+
+</main>
+
+<footer>
+  AV-Depot Rechner · Förderlogik nach Altersvorsorgereformgesetz · Stand April 2026 · Keine Anlageberatung
+</footer>
+
+<script>
+let kinder = 1;
+let chart = null;
+
+function fmt(v, d=0) {
+  return v.toLocaleString('de-DE', {minimumFractionDigits:d, maximumFractionDigits:d}) + ' €';
+}
+function fmtP(v, d=2) {
+  return v.toLocaleString('de-DE', {minimumFractionDigits:d, maximumFractionDigits:d}) + '%';
+}
+
+function calcGZ(b) {
+  const g = Math.min(b, 1800);
+  return Math.min(g, 360) * 0.5 + Math.max(0, Math.min(g, 1800) - 360) * 0.25;
+}
+
+function fvKosten(jb, br, ek, jahre) {
+  const nr = Math.max(0, br - ek);
+  let k = 0;
+  for (let i = 0; i < jahre; i++) k = (k + jb) * (1 + nr);
+  return k;
+}
+
+function fvFreies(jb, br, ek, jahre) {
+  const nr = Math.max(0, br - ek - 0.005);
+  let k = 0;
+  for (let i = 0; i < jahre; i++) k = (k + jb) * (1 + nr);
+  return k;
+}
+
+function calc() {
+  const beitrag    = parseFloat(document.getElementById('beitrag').value) || 0;
+  const steuersatz = parseFloat(document.getElementById('steuer').value) / 100;
+  const alter      = parseInt(document.getElementById('alter').value) || 35;
+  const rente      = parseInt(document.getElementById('rentenalter').value) || 67;
+  const br         = parseFloat(document.getElementById('rendite').value) / 100;
+  const k1         = parseFloat(document.getElementById('k1').value) / 100;
+  const k2         = parseFloat(document.getElementById('k2').value) / 100;
+  const k3         = parseFloat(document.getElementById('k3').value) / 100;
+
+  const gz     = calcGZ(beitrag);
+  const kz     = Math.min(beitrag, 300) * kinder;
+  const zulagen = gz + kz;
+  const jb23   = beitrag + zulagen;
+
+  const gefoerdert = Math.min(beitrag, 1800);
+  const svBrutto   = (gefoerdert + zulagen) * steuersatz;
+  const sv         = Math.max(0, svBrutto - zulagen);
+
+  const jahre = Math.max(1, rente - alter);
+  const K1 = fvFreies(beitrag, br, k1, jahre);
+  const K2 = fvKosten(jb23,   br, k2, jahre);
+  const K3 = fvKosten(jb23,   br, k3, jahre);
+
+  // Förderung
+  document.getElementById('f-gz').textContent    = fmt(gz);
+  document.getElementById('f-kz').textContent    = fmt(kz);
+  document.getElementById('f-kz-sub').textContent = kinder > 0 ? `${kinder} Kind${kinder>1?'er':''} × max. 300 €` : 'kein Kind';
+  document.getElementById('f-depot').textContent  = fmt(jb23);
+  document.getElementById('f-sv').textContent     = sv > 0 ? fmt(sv) : '–';
+
+  // Ergebniskarten
+  const best = Math.max(K1, K2, K3);
+  const cards = [
+    { id:'d1', n:'① Freies ETF-Depot', v:K1, sub:`Nettorendite: ${fmtP((br-k1-0.005)*100,1)} p.a.`, ref:K1 },
+    { id:'d2', n:'② DIY AV-Depot',      v:K2, sub:`Nettorendite: ${fmtP((br-k2)*100,1)} p.a. + Zulagen`, ref:K1 },
+    { id:'d3', n:'③ Betreutes AV-Depot', v:K3, sub:`Nettorendite: ${fmtP((br-k3)*100,1)} p.a. + Zulagen + Beratung`, ref:K1 },
+  ];
+
+  document.getElementById('result-grid').innerHTML = cards.map(c => {
+    const d = c.v - c.ref;
+    let deltaHtml;
+    if (Math.abs(d) < 100) {
+      deltaHtml = `<span class="rc-delta delta-neu">Referenz</span>`;
+    } else {
+      const sign = d > 0 ? '+' : '';
+      const cls  = d > 0 ? 'delta-pos' : 'delta-neg';
+      deltaHtml  = `<span class="rc-delta ${cls}">${sign}${fmt(Math.round(d))} ggü. ①</span>`;
+    }
+    return `<div class="result-card ${c.v===best?'best':''} ${c.id}">
+      <div class="rc-label">${c.n}</div>
+      <div class="rc-val">${fmt(Math.round(c.v))}</div>
+      <div class="rc-sub">${c.sub}</div>
+      ${deltaHtml}
+    </div>`;
+  }).join('');
+
+  updateChart(jahre, beitrag, jb23, br, k1, k2, k3);
+}
+
+function updateChart(jahre, jb1, jb23, br, k1, k2, k3) {
+  const labels=[], d1=[], d2=[], d3=[];
+  let c1=0, c2=0, c3=0;
+  const r1 = Math.max(0, br-k1-0.005);
+  const r2 = Math.max(0, br-k2);
+  const r3 = Math.max(0, br-k3);
+  const step = Math.max(1, Math.floor(jahre/20));
+  for (let i=0; i<=jahre; i++) {
+    if (i%step===0 || i===jahre) {
+      labels.push(i===0 ? 'Heute' : 'J.'+i);
+      d1.push(Math.round(c1));
+      d2.push(Math.round(c2));
+      d3.push(Math.round(c3));
+    }
+    c1=(c1+jb1)*(1+r1);
+    c2=(c2+jb23)*(1+r2);
+    c3=(c3+jb23)*(1+r3);
+  }
+
+  const ctx = document.getElementById('chart').getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'① Freies ETF-Depot', data:d1, borderColor:'#6B6B6B', backgroundColor:'rgba(107,107,107,0.05)', fill:true, tension:0.3, pointRadius:2, borderWidth:2, borderDash:[5,4] },
+        { label:'② DIY AV-Depot',     data:d2, borderColor:'#1A4FA0', backgroundColor:'rgba(26,79,160,0.07)',   fill:true, tension:0.3, pointRadius:2, borderWidth:2 },
+        { label:'③ Betreutes AV-Depot',data:d3, borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.09)', fill:true, tension:0.3, pointRadius:2.5, borderWidth:2.5 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: {
+        legend: { display:false },
+        tooltip: { callbacks: { label: c => c.dataset.label+': '+c.parsed.y.toLocaleString('de-DE')+' €' } }
+      },
+      scales: {
+        y: {
+          ticks: { callback: v => (v>=1000000 ? (v/1000000).toFixed(1).replace('.',',')+' Mio.' : v>=1000 ? Math.round(v/1000)+'k' : v)+'€', font:{size:11} },
+          grid: { color:'rgba(0,0,0,0.05)' }
+        },
+        x: { ticks: { font:{size:11}, autoSkip:true, maxRotation:0 } }
+      }
+    }
+  });
+}
+
+// Events
+document.getElementById('steuer').addEventListener('input', function() {
+  document.getElementById('steuer-val').textContent = this.value + '%'; calc();
+});
+document.getElementById('rendite').addEventListener('input', function() {
+  document.getElementById('rendite-val').textContent = parseFloat(this.value).toFixed(1).replace('.',',') + '%'; calc();
+});
+document.getElementById('k1').addEventListener('input', function() {
+  document.getElementById('k1-val').textContent = parseFloat(this.value).toFixed(2).replace('.',',') + '%'; calc();
+});
+document.getElementById('k2').addEventListener('input', function() {
+  document.getElementById('k2-val').textContent = parseFloat(this.value).toFixed(2).replace('.',',') + '%'; calc();
+});
+document.getElementById('k3').addEventListener('input', function() {
+  document.getElementById('k3-val').textContent = parseFloat(this.value).toFixed(2).replace('.',',') + '%'; calc();
+});
+document.getElementById('kp').addEventListener('click', () => { if(kinder<6) kinder++; document.getElementById('kv').textContent=kinder; calc(); });
+document.getElementById('km').addEventListener('click', () => { if(kinder>0) kinder--; document.getElementById('kv').textContent=kinder; calc(); });
+['beitrag','alter','rentenalter'].forEach(id => document.getElementById(id).addEventListener('input', calc));
+
+calc();
+</script>
+</body>
+</html>
 
