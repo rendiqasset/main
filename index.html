@@ -548,6 +548,89 @@
 
   <hr class="divider">
 
+  <!-- MONTE CARLO -->
+  <div class="section">
+    <div class="section-label">Monte-Carlo-Simulation &middot; Volatilität &amp; Szenarien</div>
+
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-light);margin-bottom:6px;">Volatilität p.a. (Standardabweichung)</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input type="range" id="mc-vola" min="5" max="30" step="1" value="15" style="-webkit-appearance:none;flex:1;height:4px;border-radius:2px;background:var(--border);cursor:pointer;">
+            <span id="mc-vola-val" style="font-size:14px;font-weight:600;min-width:40px;">15%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--ink-light);margin-top:3px;"><span>5%</span><span>15% (Aktien)</span><span>30%</span></div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-light);margin-bottom:6px;">Zielkapital</div>
+          <input type="number" id="mc-ziel" value="200000" min="10000" max="2000000" step="10000" style="width:100%;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--ink);">
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;">
+          <button id="mc-run" style="background:var(--green-mid);color:var(--white);border:none;border-radius:var(--radius);padding:11px 20px;font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;">
+            &#9654; Simulation starten (1.000 Pfade)
+          </button>
+        </div>
+      </div>
+
+      <div id="mc-prob-grid" style="display:none;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+        <div style="background:var(--grey-light);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:11px;color:var(--ink-light);margin-bottom:4px;">&#9312; Freies ETF-Depot</div>
+          <div id="mc-prob1" style="font-size:26px;font-weight:700;color:var(--grey);"></div>
+          <div style="font-size:11px;color:var(--ink-light);margin-top:2px;">Zielkapital erreicht</div>
+          <div id="mc-med1" style="font-size:12px;color:var(--ink-light);margin-top:4px;"></div>
+        </div>
+        <div style="background:var(--blue-light);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:11px;color:var(--ink-light);margin-bottom:4px;">&#9313; DIY AV-Depot</div>
+          <div id="mc-prob2" style="font-size:26px;font-weight:700;color:var(--blue);"></div>
+          <div style="font-size:11px;color:var(--ink-light);margin-top:2px;">Zielkapital erreicht</div>
+          <div id="mc-med2" style="font-size:12px;color:var(--ink-light);margin-top:4px;"></div>
+        </div>
+        <div style="background:var(--green-light);border-radius:var(--radius);padding:14px;text-align:center;">
+          <div style="font-size:11px;color:var(--ink-light);margin-bottom:4px;">&#9314; Betreutes AV-Depot</div>
+          <div id="mc-prob3" style="font-size:26px;font-weight:700;color:var(--green);"></div>
+          <div style="font-size:11px;color:var(--ink-light);margin-top:2px;">Zielkapital erreicht</div>
+          <div id="mc-med3" style="font-size:12px;color:var(--ink-light);margin-top:4px;"></div>
+        </div>
+      </div>
+
+      <div id="mc-pct-table" style="display:none;margin-bottom:16px;overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+              <th style="text-align:left;padding:8px 10px;color:var(--ink-light);font-weight:500;">Szenario</th>
+              <th style="text-align:right;padding:8px 10px;color:var(--grey);font-weight:600;">&#9312; Freies ETF</th>
+              <th style="text-align:right;padding:8px 10px;color:var(--blue);font-weight:600;">&#9313; DIY AV</th>
+              <th style="text-align:right;padding:8px 10px;color:var(--green);font-weight:600;">&#9314; Betreut AV</th>
+            </tr>
+          </thead>
+          <tbody id="mc-pct-body"></tbody>
+        </table>
+      </div>
+
+      <div id="mc-chart-wrap" style="display:none;">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-light);margin-bottom:10px;">Kapitalentwicklung &middot; 10. / 50. / 90. Perzentil</div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;font-size:12px;color:var(--ink-mid);">
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:24px;height:3px;background:var(--grey);border-radius:2px;display:inline-block;"></span>&#9312; Median</span>
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:24px;height:3px;background:var(--blue);border-radius:2px;display:inline-block;"></span>&#9313; Median</span>
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:24px;height:3px;background:var(--green-mid);border-radius:2px;display:inline-block;"></span>&#9314; Median</span>
+          <span style="display:flex;align-items:center;gap:5px;"><span style="width:24px;height:8px;background:rgba(29,158,117,0.18);border-radius:2px;display:inline-block;"></span>10.–90. Perzentil</span>
+        </div>
+        <div style="position:relative;height:320px;">
+          <canvas id="mc-chart"></canvas>
+        </div>
+      </div>
+
+      <div id="mc-placeholder" style="text-align:center;padding:40px 20px;color:var(--ink-light);font-size:13px;">
+        Einstellungen wählen und auf <strong>&#9654; Simulation starten</strong> klicken.
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:var(--ink-light);line-height:1.6;">
+      Monte-Carlo-Simulation mit 1.000 zufälligen Renditepfaden basierend auf logarithmischer Normalverteilung. Erwartungswert = eingestellte Bruttorendite, Streuung = gewählte Volatilität. Die Bänder zeigen das 10. (pessimistisch), 50. (Median) und 90. (optimistisch) Perzentil der simulierten Endkapitalien. Wahrscheinlichkeit = Anteil der Pfade, in denen das Zielkapital am Ende erreicht oder überschritten wurde. Keine Garantie für zukünftige Ergebnisse.
+    </div>
+  </div>
+
   <!-- DISCLAIMER -->
   <div class="disclaimer">
     <strong>Hinweise zur Berechnung</strong><br>
@@ -557,6 +640,33 @@
   </div>
 
 </main>
+
+<section style="max-width:960px;margin:0 auto;padding:0 2rem 2rem;">
+  <details style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+    <summary style="padding:14px 20px;font-size:13px;font-weight:600;color:var(--ink-mid);cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;">
+      Rechtlicher Hinweis &amp; Haftungsausschluss
+      <span style="font-size:11px;font-weight:400;color:var(--ink-light)">zum Lesen aufklappen ▾</span>
+    </summary>
+    <div style="padding:0 20px 20px;font-size:12px;color:var(--ink-light);line-height:1.8;border-top:1px solid var(--border);margin-top:0;">
+      <p style="margin-top:14px"><strong style="color:var(--ink-mid)">Kein Ersatz für individuelle Beratung</strong><br>
+      Die auf dieser Website bereitgestellten Berechnungen, Darstellungen und Informationen dienen ausschließlich der allgemeinen Information und unverbindlichen Orientierung. Sie stellen keine Anlageberatung, Steuerberatung, Rechtsberatung oder sonstige individuelle Finanzberatung im Sinne des Wertpapierhandelsgesetzes (WpHG), des Kapitalanlagegesetzbuchs (KAGB) oder anderer einschlägiger Rechtsvorschriften dar.</p>
+
+      <p style="margin-top:12px"><strong style="color:var(--ink-mid)">Haftungsausschluss</strong><br>
+      Der Host und Seiteninhaber übernimmt keinerlei Gewähr für die Aktualität, Korrektheit, Vollständigkeit oder Qualität der bereitgestellten Informationen und Berechnungsergebnisse. Haftungsansprüche gegen den Seiteninhaber, die sich auf Schäden materieller oder immaterieller Art beziehen, welche durch die Nutzung oder Nichtnutzung der dargebotenen Informationen bzw. durch die Nutzung fehlerhafter und unvollständiger Informationen verursacht wurden, sind grundsätzlich ausgeschlossen, sofern seitens des Seiteninhabers kein nachweislich vorsätzliches oder grob fahrlässiges Verschulden vorliegt.</p>
+
+      <p style="margin-top:12px"><strong style="color:var(--ink-mid)">Modellhafte Berechnungen</strong><br>
+      Alle Berechnungen basieren auf vereinfachten Modellannahmen und den zum Zeitpunkt der Erstellung bekannten gesetzlichen Regelungen des Altersvorsorgereformgesetzes (Bundestagsbeschluss 27.03.2026, Bundesrat-Zustimmung ausstehend). Tatsächliche Ergebnisse können erheblich von den dargestellten Werten abweichen. Insbesondere Renditeangaben sind keine Garantie für zukünftige Wertentwicklungen. Kapitalanlagen in Wertpapiere unterliegen Kursschwankungen und können zu Verlusten führen.</p>
+
+      <p style="margin-top:12px"><strong style="color:var(--ink-mid)">Steuerliche Hinweise</strong><br>
+      Steuerliche Auswirkungen hängen von den persönlichen Verhältnissen des jeweiligen Nutzers ab und können sich ändern. Die dargestellten steuerlichen Effekte (Günstigerprüfung, Grenzsteuersatz, nachgelagerte Besteuerung) sind vereinfachte Modellrechnungen ohne Berücksichtigung individueller steuerlicher Besonderheiten. Für verbindliche Steuerauskünfte wenden Sie sich bitte an einen zugelassenen Steuerberater.</p>
+
+      <p style="margin-top:12px"><strong style="color:var(--ink-mid)">Keine Produktempfehlung</strong><br>
+      Die Darstellung verschiedener Depot-Varianten dient dem allgemeinen Vergleich und stellt keine Empfehlung für ein bestimmtes Produkt, einen bestimmten Anbieter oder eine bestimmte Anlageentscheidung dar. Vor jeder Anlageentscheidung sollte eine individuelle Beratung durch eine zugelassene Fachkraft in Anspruch genommen werden.</p>
+
+      <p style="margin-top:12px;color:var(--ink-light)"><em>Stand: April 2026 · Host/Seiteninhaber</em></p>
+    </div>
+  </details>
+</section>
 
 <footer>
   AV-Depot Rechner · Förderlogik nach Altersvorsorgereformgesetz · Stand April 2026 · Keine Anlageberatung
@@ -721,7 +831,200 @@ document.getElementById('km').addEventListener('click', () => { if(kinder>0) kin
 ['beitrag','alter','rentenalter'].forEach(id => document.getElementById(id).addEventListener('input', calc));
 
 calc();
+
+
+// ── MONTE CARLO ────────────────────────────────────────────────
+let mcChart = null;
+
+function randn() {
+  // Box-Muller transform
+  let u = 0, v = 0;
+  while(u === 0) u = Math.random();
+  while(v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+function simulatePaths(jb, mu, sigma, jahre, n) {
+  // Log-normal: annual return ~ lognormal(mu_adj, sigma)
+  const mu_adj = Math.log(1 + mu) - 0.5 * sigma * sigma;
+  const results = new Array(n);
+  for (let s = 0; s < n; s++) {
+    let k = 0;
+    for (let y = 0; y < jahre; y++) {
+      const r = Math.exp(mu_adj + sigma * randn()) - 1;
+      k = (k + jb) * (1 + r);
+    }
+    results[s] = k;
+  }
+  return results;
+}
+
+function percentile(sorted, p) {
+  const idx = Math.min(sorted.length - 1, Math.floor(sorted.length * p / 100));
+  return sorted[idx];
+}
+
+function simulateTimeSeries(jb, mu, sigma, jahre, pcts) {
+  // Returns arrays of length jahre+1 for each percentile
+  const N = 400;
+  const mu_adj = Math.log(1 + mu) - 0.5 * sigma * sigma;
+  // Store all paths
+  const paths = Array.from({length: N}, () => new Array(jahre + 1).fill(0));
+  for (let s = 0; s < N; s++) {
+    let k = 0;
+    paths[s][0] = 0;
+    for (let y = 0; y < jahre; y++) {
+      const r = Math.exp(mu_adj + sigma * randn()) - 1;
+      k = (k + jb) * (1 + r);
+      paths[s][y + 1] = k;
+    }
+  }
+  // For each year, compute percentiles
+  const series = pcts.map(() => new Array(jahre + 1).fill(0));
+  for (let y = 0; y <= jahre; y++) {
+    const vals = paths.map(p => p[y]).sort((a,b) => a-b);
+    pcts.forEach((p, i) => { series[i][y] = percentile(vals, p); });
+  }
+  return series;
+}
+
+function runMC() {
+  const btn = document.getElementById('mc-run');
+  btn.textContent = '⏳ Wird berechnet...';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    const beitrag    = parseFloat(document.getElementById('beitrag').value) || 0;
+    const steuer     = parseFloat(document.getElementById('steuer').value) / 100;
+    const alter      = parseInt(document.getElementById('alter').value) || 35;
+    const rentenalter= parseInt(document.getElementById('rentenalter').value) || 67;
+    const br         = parseFloat(document.getElementById('rendite').value) / 100;
+    const k1         = parseFloat(document.getElementById('k1').value) / 100;
+    const k2         = parseFloat(document.getElementById('k2').value) / 100;
+    const k3         = parseFloat(document.getElementById('k3').value) / 100;
+    const sigma      = parseFloat(document.getElementById('mc-vola').value) / 100;
+    const ziel       = parseFloat(document.getElementById('mc-ziel').value) || 200000;
+    const jahre      = Math.max(1, rentenalter - alter);
+    const N          = 1000;
+
+    const gz   = calcGZ(beitrag);
+    const kz   = Math.min(beitrag, 300) * kinder;
+    const zulagen = gz + kz;
+    const jb1  = beitrag;
+    const jb23 = beitrag + zulagen;
+
+    const mu1 = Math.max(0, br - k1 - 0.005);
+    const mu2 = Math.max(0, br - k2);
+    const mu3 = Math.max(0, br - k3);
+
+    // Simulate end values
+    const end1 = simulatePaths(jb1,  mu1, sigma, jahre, N).sort((a,b)=>a-b);
+    const end2 = simulatePaths(jb23, mu2, sigma, jahre, N).sort((a,b)=>a-b);
+    const end3 = simulatePaths(jb23, mu3, sigma, jahre, N).sort((a,b)=>a-b);
+
+    function prob(arr) { return (arr.filter(v => v >= ziel).length / arr.length * 100).toFixed(0) + '%'; }
+    function med(arr)  { return fmt(Math.round(percentile(arr, 50))); }
+
+    document.getElementById('mc-prob1').textContent = prob(end1);
+    document.getElementById('mc-prob2').textContent = prob(end2);
+    document.getElementById('mc-prob3').textContent = prob(end3);
+    document.getElementById('mc-med1').textContent = 'Median: ' + med(end1);
+    document.getElementById('mc-med2').textContent = 'Median: ' + med(end2);
+    document.getElementById('mc-med3').textContent = 'Median: ' + med(end3);
+
+    // Percentile table
+    const rows = [
+      { label: '😟 Pessimistisch (10. Pzt.)', p: 10 },
+      { label: '😐 Median (50. Pzt.)',         p: 50 },
+      { label: '😊 Optimistisch (90. Pzt.)',   p: 90 },
+    ];
+    document.getElementById('mc-pct-body').innerHTML = rows.map(r => `
+      <tr style="border-bottom:1px solid var(--grey-light);">
+        <td style="padding:8px 10px;color:var(--ink-mid);">${r.label}</td>
+        <td style="padding:8px 10px;text-align:right;color:var(--grey);font-weight:500;">${fmt(Math.round(percentile(end1, r.p)))}</td>
+        <td style="padding:8px 10px;text-align:right;color:var(--blue);font-weight:500;">${fmt(Math.round(percentile(end2, r.p)))}</td>
+        <td style="padding:8px 10px;text-align:right;color:var(--green);font-weight:600;">${fmt(Math.round(percentile(end3, r.p)))}</td>
+      </tr>
+    `).join('');
+
+    // Time series for chart (use 400 paths for speed)
+    const pcts = [10, 50, 90];
+    const ts1 = simulateTimeSeries(jb1,  mu1, sigma, jahre, pcts);
+    const ts2 = simulateTimeSeries(jb23, mu2, sigma, jahre, pcts);
+    const ts3 = simulateTimeSeries(jb23, mu3, sigma, jahre, pcts);
+
+    // Labels
+    const step = Math.max(1, Math.floor(jahre / 18));
+    const labels = [];
+    for (let i = 0; i <= jahre; i++) {
+      if (i % step === 0 || i === jahre) labels.push(i === 0 ? 'Heute' : 'J.' + i);
+    }
+    function thin(arr) {
+      const out = [];
+      for (let i = 0; i <= jahre; i++) {
+        if (i % step === 0 || i === jahre) out.push(Math.round(arr[i]));
+      }
+      return out;
+    }
+
+    const ctx = document.getElementById('mc-chart').getContext('2d');
+    if (mcChart) mcChart.destroy();
+
+    mcChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          // Bands (filled area between p10 and p90)
+          { label:'① Band', data: thin(ts1[2]), borderColor:'transparent', backgroundColor:'rgba(107,107,107,0.10)', fill:'+1', pointRadius:0, tension:0.3 },
+          { label:'① p10',  data: thin(ts1[0]), borderColor:'transparent', backgroundColor:'rgba(107,107,107,0.10)', fill:false, pointRadius:0, tension:0.3 },
+          { label:'② Band', data: thin(ts2[2]), borderColor:'transparent', backgroundColor:'rgba(26,79,160,0.10)',  fill:'+1', pointRadius:0, tension:0.3 },
+          { label:'② p10',  data: thin(ts2[0]), borderColor:'transparent', backgroundColor:'rgba(26,79,160,0.10)',  fill:false, pointRadius:0, tension:0.3 },
+          { label:'③ Band', data: thin(ts3[2]), borderColor:'transparent', backgroundColor:'rgba(29,158,117,0.13)', fill:'+1', pointRadius:0, tension:0.3 },
+          { label:'③ p10',  data: thin(ts3[0]), borderColor:'transparent', backgroundColor:'rgba(29,158,117,0.13)', fill:false, pointRadius:0, tension:0.3 },
+          // Medians
+          { label:'① Median', data: thin(ts1[1]), borderColor:'#6B6B6B', backgroundColor:'transparent', fill:false, pointRadius:2, borderWidth:2, tension:0.3, borderDash:[4,3] },
+          { label:'② Median', data: thin(ts2[1]), borderColor:'#1A4FA0', backgroundColor:'transparent', fill:false, pointRadius:2, borderWidth:2, tension:0.3 },
+          { label:'③ Median', data: thin(ts3[1]), borderColor:'#1D9E75', backgroundColor:'transparent', fill:false, pointRadius:2, borderWidth:2.5, tension:0.3 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: c => {
+                if (['① Band','① p10','② Band','② p10','③ Band','③ p10'].includes(c.dataset.label)) return null;
+                return c.dataset.label + ': ' + c.parsed.y.toLocaleString('de-DE') + ' €';
+              }
+            },
+            filter: item => !['① Band','① p10','② Band','② p10','③ Band','③ p10'].includes(item.dataset.label)
+          }
+        },
+        scales: {
+          y: { ticks: { callback: v => (v>=1000000?(v/1000000).toFixed(1).replace('.',',')+' Mio.':v>=1000?Math.round(v/1000)+'k':v)+'€', font:{size:11} }, grid:{color:'rgba(0,0,0,0.05)'} },
+          x: { ticks: { font:{size:11}, autoSkip:true, maxRotation:0 } }
+        }
+      }
+    });
+
+    // Show all result elements
+    document.getElementById('mc-placeholder').style.display = 'none';
+    document.getElementById('mc-prob-grid').style.display = 'grid';
+    document.getElementById('mc-pct-table').style.display = 'block';
+    document.getElementById('mc-chart-wrap').style.display = 'block';
+
+    btn.textContent = '▶ Neu simulieren';
+    btn.disabled = false;
+  }, 50);
+}
+
+document.getElementById('mc-run').addEventListener('click', runMC);
+document.getElementById('mc-vola').addEventListener('input', function() {
+  document.getElementById('mc-vola-val').textContent = this.value + '%';
+});
+
 </script>
 </body>
 </html>
-
