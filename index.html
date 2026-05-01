@@ -522,6 +522,14 @@
         <div class="depot-feature"><span>Abgeltungssteuer</span><span class="check">✗ (Anspar)</span></div>
         <div class="depot-feature"><span>Beratung & Betreuung</span><span class="check">✓</span></div>
         <div class="depot-feature"><span>Strategie & Rebalancing</span><span class="check">✓</span></div>
+        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--green);margin-bottom:7px;">Advisor's Alpha (Vanguard)</div>
+          <div id="d3-alpha-checks"></div>
+          <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:11px;color:var(--ink-light);">Alpha gesamt:</span>
+            <span id="d3-alpha-total" style="font-size:13px;font-weight:700;color:var(--green);">+0 Bp.</span>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -781,7 +789,9 @@ function calc() {
   const jahre = Math.max(1, rente - alter);
   const K1 = fvFreies(beitrag, br, k1, jahre);
   const K2 = fvKosten(jb23,   br, k2, jahre);
-  const K3 = fvKosten(jb23,   br, k3, jahre);
+  const alphaPct = (typeof getActiveBp === 'function' ? getActiveBp() : 0) / 10000;
+  const k3eff = Math.max(0, k3 - alphaPct); // Alpha erhöht Nettorendite = senkt effektive Kostenlast
+  const K3 = fvKosten(jb23, br, k3eff, jahre);
 
   // Förderung
   document.getElementById('f-gz').textContent    = fmt(gz);
@@ -795,7 +805,7 @@ function calc() {
   const cards = [
     { id:'d1', n:'① Freies ETF-Depot', v:K1, sub:`Nettorendite: ${fmtP((br-k1-0.005)*100,1)} p.a.`, ref:K1 },
     { id:'d2', n:'② DIY AV-Depot',      v:K2, sub:`Nettorendite: ${fmtP((br-k2)*100,1)} p.a. + Zulagen`, ref:K1 },
-    { id:'d3', n:'③ Betreutes AV-Depot', v:K3, sub:`Nettorendite: ${fmtP((br-k3)*100,1)} p.a. + Zulagen + Beratung`, ref:K1 },
+    { id:'d3', n:'③ Betreutes AV-Depot', v:K3, sub:`Nettorendite: ${fmtP((br-k3eff)*100,1)} p.a. + Zulagen + Alpha`, ref:K1 },
   ];
 
   document.getElementById('result-grid').innerHTML = cards.map(c => {
@@ -816,7 +826,7 @@ function calc() {
     </div>`;
   }).join('');
 
-  updateChart(jahre, beitrag, jb23, br, k1, k2, k3);
+  updateChart(jahre, beitrag, jb23, br, k1, k2, k3eff);
 }
 
 function updateChart(jahre, jb1, jb23, br, k1, k2, k3) {
@@ -902,6 +912,32 @@ const ALPHA_COMPONENTS = [
 let alphaEnabled = { behavioral:true, rebalancing:true, kosten:false, steuer:false };
 let alphaChart = null;
 
+function renderD3AlphaChecks() {
+  const el = document.getElementById('d3-alpha-checks');
+  if (!el) return;
+  el.innerHTML = ALPHA_COMPONENTS.map(c => {
+    const on = alphaEnabled[c.id];
+    return `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-mid);padding:3px 0;cursor:pointer;">
+      <input type="checkbox" data-id="${c.id}" ${on?'checked':''} style="accent-color:var(--green-mid);width:13px;height:13px;">
+      <span style="flex:1">${c.label}</span>
+      <span style="color:var(--green);font-weight:600;">+${c.bp} Bp.</span>
+    </label>`;
+  }).join('');
+  // Total
+  const totalBp = getActiveBp();
+  const totalEl = document.getElementById('d3-alpha-total');
+  if (totalEl) totalEl.textContent = '+' + totalBp + ' Bp. (+' + (totalBp/100).toFixed(2).replace('.',',') + '% p.a.)';
+  // Events
+  el.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', function() {
+      alphaEnabled[this.dataset.id] = this.checked;
+      renderD3AlphaChecks();
+      updateAlpha();
+      calc();
+    });
+  });
+}
+
 function renderAlphaBars() {
   const maxBp = 150;
   document.getElementById('alpha-bars').innerHTML = ALPHA_COMPONENTS.map(c => {
@@ -932,9 +968,12 @@ function renderAlphaToggles() {
   document.querySelectorAll('#alpha-toggles input[type=checkbox]').forEach(cb => {
     cb.addEventListener('change', function() {
       alphaEnabled[this.dataset.id] = this.checked;
+      renderD3AlphaChecks();
       updateAlpha();
+      calc();
     });
   });
+  renderD3AlphaChecks();
 }
 
 function getActiveBp() {
@@ -951,7 +990,10 @@ function updateAlpha() {
   const br          = parseFloat(document.getElementById('rendite').value) / 100;
   const k1          = parseFloat(document.getElementById('k1').value) / 100;
   const k2          = parseFloat(document.getElementById('k2').value) / 100;
-  const k3          = parseFloat(document.getElementById('k3').value) / 100;
+  const k3raw       = parseFloat(document.getElementById('k3').value) / 100;
+  const alphaPctLocal = getActiveBp() / 10000;
+  const k3eff       = Math.max(0, k3raw - alphaPctLocal);
+  const k3          = k3raw; // keep for display
   const gz          = calcGZ(beitrag);
   const kz          = Math.min(beitrag, 300) * kinder;
   const zulagen     = gz + kz;
@@ -965,8 +1007,8 @@ function updateAlpha() {
 
   const mu1  = Math.max(0, br - k1 - 0.005);
   const mu2  = Math.max(0, br - k2);
-  const mu3  = Math.max(0, br - k3);
-  const mu3a = Math.max(0, br - k3 + alphaPct);   // ③ mit Alpha
+  const mu3  = Math.max(0, br - k3eff);
+  const mu3a = Math.max(0, br - k3eff + alphaPct);   // ③ mit Alpha
 
   function fv(jb, r, j) { let k=0; for(let i=0;i<j;i++) k=(k+jb)*(1+r); return k; }
 
@@ -1033,6 +1075,7 @@ function updateAlpha() {
 // Init alpha UI (data populated after main calc() runs below)
 renderAlphaBars();
 renderAlphaToggles();
+renderD3AlphaChecks();
 
 // ── MONTE CARLO ────────────────────────────────────────────────
 let mcChart = null;
