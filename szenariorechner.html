@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rendiq · Szenariorechner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:      #0C1A2E;
+      --slate:     #1D3461;
+      --gold:      #C9A84C;
+      --gold-l:    #F9F4E8;
+      --grey:      #64748B;
+      --grey-l:    #F5F6F8;
+      --grey-m:    #E4E7ED;
+      --white:     #FFFFFF;
+      --ink:       #0C1A2E;
+      --ink-mid:   #334155;
+      --ink-light: #64748B;
+      --border:    #DDE1EA;
+      --bg:        #F5F6F8;
+      --green:     #16A34A;
+      --green-l:   #F0FDF4;
+      --red:       #DC2626;
+      --red-l:     #FEF2F2;
+      --blue:      #2563EB;
+      --blue-l:    #EFF6FF;
+      --radius:    10px;
+      --shadow:    0 2px 16px rgba(12,26,46,0.08);
+
+      /* Szenario-Farben */
+      --col-basis: #0C1A2E;
+      --col-a:     #DC2626;
+      --col-b:     #16A34A;
+      --col-mc:    #9333EA;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; }
+
+    /* NAV */
+    header {
+      background:rgba(255,255,255,0.92); backdrop-filter:blur(16px);
+      border-bottom:1px solid var(--border);
+      padding:0 2rem; position:sticky; top:0; z-index:100;
+      display:flex; align-items:center; justify-content:space-between; height:64px;
+    }
+    .logo { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:var(--ink); text-decoration:none; letter-spacing:-0.5px; }
+    .logo span { color:var(--gold); }
+    .nav-right { display:flex; align-items:center; gap:12px; }
+    .nav-back { font-size:13px; font-weight:500; color:var(--ink-light); text-decoration:none; transition:color 0.15s; }
+    .nav-back:hover { color:var(--ink); }
+    .header-badge { font-size:11px; background:var(--gold-l); color:#8B6914; border-radius:20px; padding:4px 12px; font-weight:600; }
+
+    /* HERO */
+    .hero { background:var(--white); border-bottom:1px solid var(--border); padding:2.5rem 2rem 2rem; max-width:1040px; margin:0 auto; }
+    .hero-eyebrow { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; color:var(--gold); margin-bottom:8px; }
+    .hero h1 { font-family:'Syne',sans-serif; font-size:clamp(24px,3.5vw,36px); font-weight:800; line-height:1.1; color:var(--ink); margin-bottom:10px; letter-spacing:-0.8px; }
+    .hero p { font-size:14px; color:var(--ink-light); line-height:1.6; max-width:600px; }
+
+    /* MAIN */
+    main { max-width:1040px; margin:0 auto; padding:2rem; }
+    .section-label { font-family:'Syne',sans-serif; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.09em; color:var(--ink-light); margin-bottom:14px; }
+    .divider { border:none; border-top:1px solid var(--border); margin:2rem 0; }
+
+    /* MODE TOGGLE */
+    .mode-bar { display:flex; gap:0; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:1.5rem; background:var(--white); }
+    .mode-btn { flex:1; padding:11px 16px; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:500; cursor:pointer; border:none; background:transparent; color:var(--ink-light); transition:all 0.15s; }
+    .mode-btn.active { background:var(--navy); color:var(--white); font-weight:600; }
+
+    /* INPUT GRID */
+    .input-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; }
+    .field { display:flex; flex-direction:column; gap:5px; }
+    .field label { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-light); }
+    .field input[type=number] {
+      background:var(--white); border:1px solid var(--border); border-radius:8px;
+      padding:9px 12px; font-size:14px; font-family:'DM Sans',sans-serif; color:var(--ink); width:100%;
+      transition:border-color 0.15s;
+    }
+    .field input:focus { outline:none; border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,168,76,0.1); }
+    .slider-row { display:flex; align-items:center; gap:10px; }
+    .slider-row input[type=range] { flex:1; -webkit-appearance:none; height:4px; border-radius:2px; background:var(--border); cursor:pointer; }
+    .slider-row input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; background:var(--navy); border-radius:50%; border:2px solid var(--white); box-shadow:0 1px 4px rgba(0,0,0,0.2); }
+    .slider-val { font-size:13px; font-weight:600; min-width:48px; text-align:right; color:var(--ink); }
+
+    /* SCENARIO CARDS */
+    .scenario-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:1.5rem; }
+    .scenario-card { background:var(--white); border:1.5px solid var(--border); border-radius:var(--radius); padding:18px; }
+    .scenario-card.s-a { border-top:3px solid var(--col-a); }
+    .scenario-card.s-b { border-top:3px solid var(--col-b); }
+    .scenario-card.s-mc { border-top:3px solid var(--col-mc); grid-column:1/-1; }
+    .scenario-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; margin-bottom:4px; }
+    .s-a .scenario-title { color:var(--col-a); }
+    .s-b .scenario-title { color:var(--col-b); }
+    .s-mc .scenario-title { color:var(--col-mc); }
+    .scenario-desc { font-size:12px; color:var(--ink-light); margin-bottom:14px; line-height:1.5; }
+    .scenario-toggle { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+    .toggle-switch { position:relative; width:36px; height:20px; }
+    .toggle-switch input { opacity:0; width:0; height:0; }
+    .toggle-track {
+      position:absolute; inset:0; border-radius:20px; background:var(--grey-m);
+      cursor:pointer; transition:background 0.2s;
+    }
+    .toggle-track::after {
+      content:''; position:absolute; left:2px; top:2px;
+      width:16px; height:16px; border-radius:50%; background:var(--white);
+      transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle-switch input:checked + .toggle-track { background:var(--navy); }
+    .toggle-switch input:checked + .toggle-track::after { transform:translateX(16px); }
+    .toggle-label { font-size:13px; font-weight:500; color:var(--ink-mid); }
+    .scenario-inputs { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .scenario-inputs.three { grid-template-columns:1fr 1fr 1fr; }
+
+    /* RESULT OVERVIEW */
+    .result-bar {
+      background:var(--white); border:1px solid var(--border); border-radius:var(--radius);
+      padding:20px; margin-bottom:1.5rem;
+    }
+    .result-cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; }
+    .res-col { text-align:center; padding:12px; border-radius:8px; }
+    .res-col.basis { background:rgba(12,26,46,0.05); }
+    .res-col.s-a { background:var(--red-l); }
+    .res-col.s-b { background:var(--green-l); }
+    .res-col-label { font-size:11px; color:var(--ink-light); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.04em; }
+    .res-col-val { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; letter-spacing:-0.5px; }
+    .res-col.basis .res-col-val { color:var(--navy); }
+    .res-col.s-a .res-col-val { color:var(--col-a); }
+    .res-col.s-b .res-col-val { color:var(--col-b); }
+    .res-col-delta { font-size:12px; font-weight:600; margin-top:4px; }
+    .delta-neg { color:var(--col-a); }
+    .delta-pos { color:var(--col-b); }
+    .res-col-sub { font-size:11px; color:var(--ink-light); margin-top:2px; }
+
+    /* CHART */
+    .chart-box { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:1.5rem; }
+    .chart-legend { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:14px; }
+    .leg-item { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-mid); }
+    .leg-line { width:20px; height:3px; border-radius:2px; display:inline-block; flex-shrink:0; }
+    .chart-wrap { position:relative; height:280px; }
+
+    /* MC RESULT */
+    .mc-result-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; }
+    .mc-card { background:var(--grey-l); border-radius:8px; padding:12px; text-align:center; }
+    .mc-card-label { font-size:11px; color:var(--ink-light); margin-bottom:4px; }
+    .mc-card-val { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--col-mc); }
+    .mc-card-sub { font-size:11px; color:var(--ink-light); margin-top:2px; }
+    .mc-run-btn {
+      background:var(--navy); color:var(--white); border:none; border-radius:var(--radius);
+      padding:11px 24px; font-size:14px; font-weight:600; font-family:'DM Sans',sans-serif;
+      cursor:pointer; transition:background 0.15s;
+    }
+    .mc-run-btn:hover { background:var(--slate); }
+
+    /* DISCLAIMER */
+    .note { font-size:11px; color:var(--ink-light); line-height:1.7; background:var(--grey-l); border-radius:var(--radius); padding:14px 18px; }
+
+    /* FOOTER */
+    footer { margin-top:2rem; }
+    .footer-inner {
+      background:var(--navy); color:rgba(255,255,255,0.5);
+      padding:28px 2rem; display:flex; flex-wrap:wrap;
+      justify-content:space-between; align-items:center; gap:16px;
+    }
+    .footer-logo { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; color:var(--white); text-decoration:none; }
+    .footer-logo span { color:var(--gold); }
+    .footer-link { font-size:12px; color:rgba(255,255,255,0.6); text-decoration:none; font-weight:500; }
+    .footer-link:hover { color:var(--gold); }
+
+    @media (max-width:640px) {
+      main { padding:1.25rem; }
+      .scenario-grid { grid-template-columns:1fr; }
+      .scenario-inputs { grid-template-columns:1fr; }
+      .scenario-inputs.three { grid-template-columns:1fr 1fr; }
+      .mc-result-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">Rend<span>iq</span></a>
+  <div class="nav-right">
+    <a href="index.html" class="nav-back">← Alle Tools</a>
+    <div class="header-badge">Szenariorechner · Draft</div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-eyebrow">Szenarioplanung · Was-wäre-wenn</div>
+  <h1>Was kostet eine Pause?<br>Was bringt mehr Einsatz?</h1>
+  <p>Spiele Beitragsunterbrechungen und Beitragserhöhungen gegen den Basisplan – und sieh sofort das Delta. Optional mit Monte-Carlo-Simulation für realistische Bandbreiten.</p>
+</div>
+
+<main>
+
+  <!-- MODE -->
+  <div class="section-label">Anlagetyp</div>
+  <div class="mode-bar">
+    <button class="mode-btn active" id="btn-depot" onclick="setMode('depot')">📈 Depot (mit Rendite & Volatilität)</button>
+    <button class="mode-btn" id="btn-konto" onclick="setMode('konto')">🏦 Konto / Tagesgeld (ohne Vola)</button>
+  </div>
+
+  <!-- BASISPLAN -->
+  <div class="section-label">Basisplan</div>
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:1.5rem;">
+    <div class="input-grid">
+      <div class="field">
+        <label>Startkapital (€)</label>
+        <input type="number" id="b-start" value="5000" min="0" step="500" oninput="recalc()">
+      </div>
+      <div class="field">
+        <label>Monatl. Beitrag (€)</label>
+        <input type="number" id="b-rate" value="200" min="0" step="10" oninput="recalc()">
+      </div>
+      <div class="field">
+        <label>Laufzeit (Jahre)</label>
+        <input type="number" id="b-jahre" value="20" min="1" max="50" step="1" oninput="recalc()">
+      </div>
+      <div class="field">
+        <label id="rendite-label">Rendite p.a. (%)</label>
+        <div class="slider-row">
+          <input type="range" id="b-rendite" min="0" max="10" step="0.25" value="6" oninput="onRenditeSlide()">
+          <span class="slider-val" id="b-rendite-val">6,00%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SZENARIEN -->
+  <div class="section-label">Szenarien</div>
+  <div class="scenario-grid">
+
+    <!-- Szenario A: Unterbrechung -->
+    <div class="scenario-card s-a">
+      <div class="scenario-title">Szenario A – Beitragsunterbrechung</div>
+      <div class="scenario-desc">z.B. Elternzeit, Jobwechsel, Krankheit – Beiträge pausieren für eine definierte Zeit.</div>
+      <div class="scenario-toggle">
+        <label class="toggle-switch">
+          <input type="checkbox" id="a-active" checked onchange="recalc()">
+          <span class="toggle-track"></span>
+        </label>
+        <span class="toggle-label">Aktiv</span>
+      </div>
+      <div class="scenario-inputs" id="a-inputs">
+        <div class="field">
+          <label>Ab Jahr</label>
+          <input type="number" id="a-ab" value="3" min="1" max="49" step="1" oninput="recalc()">
+        </div>
+        <div class="field">
+          <label>Dauer (Monate)</label>
+          <input type="number" id="a-dauer" value="12" min="1" max="120" step="1" oninput="recalc()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Szenario B: Erhöhung -->
+    <div class="scenario-card s-b">
+      <div class="scenario-title">Szenario B – Beitragserhöhung</div>
+      <div class="scenario-desc">z.B. Gehaltserhöhung, Erbschaft, Sparrate steigern – zusätzlicher Betrag ab einem Zeitpunkt.</div>
+      <div class="scenario-toggle">
+        <label class="toggle-switch">
+          <input type="checkbox" id="b-active" checked onchange="recalc()">
+          <span class="toggle-track"></span>
+        </label>
+        <span class="toggle-label">Aktiv</span>
+      </div>
+      <div class="scenario-inputs" id="b-inputs">
+        <div class="field">
+          <label>Ab Jahr</label>
+          <input type="number" id="b-ab" value="5" min="1" max="50" step="1" oninput="recalc()">
+        </div>
+        <div class="field">
+          <label>Zusatzbetrag (€/Mon.)</label>
+          <input type="number" id="b-extra" value="100" min="1" step="10" oninput="recalc()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Monte Carlo -->
+    <div class="scenario-card s-mc" id="mc-card">
+      <div class="scenario-title">Monte-Carlo-Simulation</div>
+      <div class="scenario-desc">1.000 zufällige Renditepfade – wähle welches Szenario simuliert wird. Zeigt 10. / 50. / 90. Perzentil des Endkapitals.</div>
+      <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="display:flex;flex-direction:column;gap:10px;flex:1;min-width:200px;">
+          <div class="field">
+            <label>Volatilität p.a. (%)</label>
+            <div class="slider-row">
+              <input type="range" id="mc-vola" min="3" max="30" step="1" value="15" oninput="onVolaSlide()">
+              <span class="slider-val" id="mc-vola-val">15%</span>
+            </div>
+            <div style="font-size:11px;color:var(--ink-light);margin-top:3px;">Tagesgeld ~3% · Anleihen ~7% · Aktien global ~15% · Emerging ~25%</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:200px;">
+          <div class="field">
+            <label>Szenario simulieren</label>
+            <select id="mc-szenario" style="background:var(--grey-l);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);cursor:pointer;">
+              <option value="basis">Basisplan</option>
+              <option value="a">Szenario A – Unterbrechung</option>
+              <option value="b">Szenario B – Erhöhung</option>
+            </select>
+          </div>
+          <button class="mc-run-btn" onclick="runMC()">▶ Simulation starten</button>
+        </div>
+      </div>
+      <div id="mc-status" style="font-size:12px;color:var(--ink-light);margin-bottom:8px;"></div>
+      <div id="mc-result" style="display:none;">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-light);margin-bottom:8px;" id="mc-result-label">Basisplan</div>
+        <div class="mc-result-grid">
+          <div class="mc-card">
+            <div class="mc-card-label">😟 Pessimistisch (10. Pzt.)</div>
+            <div class="mc-card-val" id="mc-p10">—</div>
+            <div class="mc-card-delta" id="mc-d10" style="font-size:11px;font-weight:600;margin-top:3px;"></div>
+          </div>
+          <div class="mc-card">
+            <div class="mc-card-label">😐 Median (50. Pzt.)</div>
+            <div class="mc-card-val" id="mc-p50">—</div>
+            <div class="mc-card-delta" id="mc-d50" style="font-size:11px;font-weight:600;margin-top:3px;"></div>
+          </div>
+          <div class="mc-card">
+            <div class="mc-card-label">😊 Optimistisch (90. Pzt.)</div>
+            <div class="mc-card-val" id="mc-p90">—</div>
+            <div class="mc-card-delta" id="mc-d90" style="font-size:11px;font-weight:600;margin-top:3px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ERGEBNISSE -->
+  <div class="section-label">Ergebnisse im Vergleich</div>
+  <div class="result-bar">
+    <div class="result-cols" id="result-cols"></div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-box">
+    <div class="chart-legend" id="chart-legend"></div>
+    <div class="chart-wrap">
+      <canvas id="main-chart"></canvas>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <div class="note">
+    <strong style="color:var(--ink-mid);">Hinweis:</strong> Alle Berechnungen sind modellhafte Drafts. Basisplan und Szenarien nutzen monatliche Zinseszinsrechnung. Monte-Carlo verwendet Log-Normalverteilung mit eingestellter Volatilität. Konto-Modus ohne Volatilität (deterministisch). Steuern, Kosten und Inflation sind nicht eingerechnet. Kein Ersatz für individuelle Beratung.
+  </div>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <a href="index.html" class="footer-logo">Rend<span>iq</span></a>
+      <span style="font-size:12px;">Szenariorechner · Draft · Stand April 2026</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <span style="font-size:11px;color:rgba(255,255,255,0.35);">Modellhafte Berechnung · Kein Ersatz für individuelle Beratung</span>
+      <a href="index.html" class="footer-link">← Alle Tools</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+let mode = 'depot';
+let mainChart = null;
+let mcChart = null;
+
+// ── HELPERS ──
+function fmt(v) {
+  if (Math.abs(v) >= 1000000) return (v/1000000).toFixed(2).replace('.',',') + ' Mio. €';
+  if (Math.abs(v) >= 1000)    return v.toLocaleString('de-DE',{maximumFractionDigits:0}) + ' €';
+  return v.toLocaleString('de-DE',{maximumFractionDigits:0}) + ' €';
+}
+function fmtSign(v) {
+  const s = v >= 0 ? '+' : '';
+  return s + fmt(v);
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-depot').className = 'mode-btn' + (m==='depot'?' active':'');
+  document.getElementById('btn-konto').className = 'mode-btn' + (m==='konto'?' active':'');
+  document.getElementById('mc-card').style.opacity = m === 'depot' ? '1' : '0.4';
+  document.getElementById('mc-card').style.pointerEvents = m === 'depot' ? 'auto' : 'none';
+  document.getElementById('rendite-label').textContent = m === 'depot' ? 'Rendite p.a. (%)' : 'Zins p.a. (%)';
+  recalc();
+}
+
+function onRenditeSlide() {
+  const v = parseFloat(document.getElementById('b-rendite').value);
+  document.getElementById('b-rendite-val').textContent = v.toFixed(2).replace('.',',') + '%';
+  recalc();
+}
+function onVolaSlide() {
+  document.getElementById('mc-vola-val').textContent = document.getElementById('mc-vola').value + '%';
+}
+
+// ── CORE CALC ──
+function calcPlan(start, rate, renditePA, months, pauseStartMonth, pauseDuration, extraStartMonth, extra) {
+  const r = renditePA / 100 / 12;
+  const series = [start];
+  let k = start;
+  for (let m = 1; m <= months; m++) {
+    let beitrag = rate;
+    // Pause
+    if (pauseStartMonth !== null && m >= pauseStartMonth && m < pauseStartMonth + pauseDuration) beitrag = 0;
+    // Extra
+    if (extraStartMonth !== null && m >= extraStartMonth) beitrag += extra;
+    k = k * (1 + r) + beitrag;
+    series.push(k);
+  }
+  return series;
+}
+
+function getInputs() {
+  const start   = parseFloat(document.getElementById('b-start').value) || 0;
+  const rate    = parseFloat(document.getElementById('b-rate').value) || 0;
+  const jahre   = parseInt(document.getElementById('b-jahre').value) || 1;
+  const rendite = parseFloat(document.getElementById('b-rendite').value) || 0;
+  const months  = jahre * 12;
+
+  const aActive = document.getElementById('a-active').checked;
+  const aAb     = aActive ? (parseInt(document.getElementById('a-ab').value) || 1) : null;
+  const aDauer  = aActive ? (parseInt(document.getElementById('a-dauer').value) || 1) : null;
+  const aPauseStart = aActive ? (aAb - 1) * 12 + 1 : null;
+
+  const bActive = document.getElementById('b-active').checked;
+  const bAb     = bActive ? (parseInt(document.getElementById('b-ab').value) || 1) : null;
+  const bExtra  = bActive ? (parseFloat(document.getElementById('b-extra').value) || 0) : null;
+  const bExtraStart = bActive ? (bAb - 1) * 12 + 1 : null;
+
+  return { start, rate, rendite, months, jahre, aPauseStart, aDauer, bExtraStart, bExtra, aActive, bActive };
+}
+
+function recalc() {
+  const inp = getInputs();
+
+  // Basis
+  const seriesBasis = calcPlan(inp.start, inp.rate, inp.rendite, inp.months, null, null, null, null);
+  // Szenario A (Unterbrechung, kein Extra)
+  const seriesA = inp.aActive
+    ? calcPlan(inp.start, inp.rate, inp.rendite, inp.months, inp.aPauseStart, inp.aDauer, null, null)
+    : null;
+  // Szenario B (kein Pause, mit Extra)
+  const seriesB = inp.bActive
+    ? calcPlan(inp.start, inp.rate, inp.rendite, inp.months, null, null, inp.bExtraStart, inp.bExtra)
+    : null;
+  // Kombi: A + B
+  const seriesKombi = (inp.aActive && inp.bActive)
+    ? calcPlan(inp.start, inp.rate, inp.rendite, inp.months, inp.aPauseStart, inp.aDauer, inp.bExtraStart, inp.bExtra)
+    : null;
+
+  const endBasis = seriesBasis[inp.months];
+  const endA     = seriesA ? seriesA[inp.months] : null;
+  const endB     = seriesB ? seriesB[inp.months] : null;
+  const endKombi = seriesKombi ? seriesKombi[inp.months] : null;
+
+  // Result cols
+  const cols = document.getElementById('result-cols');
+  let html = `
+    <div class="res-col basis">
+      <div class="res-col-label">Basisplan</div>
+      <div class="res-col-val">${fmt(endBasis)}</div>
+      <div class="res-col-sub">nach ${inp.jahre} Jahren</div>
+    </div>`;
+  if (endA !== null) {
+    const d = endA - endBasis;
+    html += `<div class="res-col s-a">
+      <div class="res-col-label">A: Unterbrechung</div>
+      <div class="res-col-val">${fmt(endA)}</div>
+      <div class="res-col-delta delta-neg">${fmtSign(d)}</div>
+      <div class="res-col-sub">ggü. Basis</div>
+    </div>`;
+  }
+  if (endB !== null) {
+    const d = endB - endBasis;
+    html += `<div class="res-col s-b">
+      <div class="res-col-label">B: Erhöhung</div>
+      <div class="res-col-val">${fmt(endB)}</div>
+      <div class="res-col-delta delta-pos">${fmtSign(d)}</div>
+      <div class="res-col-sub">ggü. Basis</div>
+    </div>`;
+  }
+  if (endKombi !== null) {
+    const d = endKombi - endBasis;
+    const cls = d >= 0 ? 'delta-pos' : 'delta-neg';
+    html += `<div class="res-col" style="background:var(--grey-l);">
+      <div class="res-col-label">A + B kombiniert</div>
+      <div class="res-col-val" style="color:var(--slate);">${fmt(endKombi)}</div>
+      <div class="res-col-delta ${cls}">${fmtSign(d)}</div>
+      <div class="res-col-sub">ggü. Basis</div>
+    </div>`;
+  }
+  cols.innerHTML = html;
+
+  // Chart
+  renderChart(inp, seriesBasis, seriesA, seriesB, seriesKombi);
+}
+
+function renderChart(inp, basis, a, b, kombi) {
+  const step = Math.max(1, Math.floor(inp.months / 24));
+  const labels = [];
+  for (let m = 0; m <= inp.months; m += step) {
+    labels.push(m === 0 ? 'Heute' : (m % 12 === 0 ? 'J.' + (m/12) : 'M.' + m));
+  }
+  if (labels[labels.length-1] !== 'J.' + inp.jahre) labels.push('J.' + inp.jahre);
+
+  function thin(s) {
+    const out = [];
+    for (let m = 0; m <= inp.months; m += step) out.push(Math.round(s[m]));
+    if (out.length < labels.length) out.push(Math.round(s[inp.months]));
+    return out;
+  }
+
+  const datasets = [
+    { label:'Basisplan', data:thin(basis), borderColor:'#0C1A2E', backgroundColor:'rgba(12,26,46,0.05)', fill:true, tension:0.3, pointRadius:0, borderWidth:2.5 }
+  ];
+  const legend = [{ color:'#0C1A2E', label:'Basisplan', dash:false }];
+
+  if (a) {
+    datasets.push({ label:'A: Unterbrechung', data:thin(a), borderColor:'#DC2626', backgroundColor:'transparent', fill:false, tension:0.3, pointRadius:0, borderWidth:2, borderDash:[5,3] });
+    legend.push({ color:'#DC2626', label:'A: Unterbrechung', dash:true });
+  }
+  if (b) {
+    datasets.push({ label:'B: Erhöhung', data:thin(b), borderColor:'#16A34A', backgroundColor:'transparent', fill:false, tension:0.3, pointRadius:0, borderWidth:2 });
+    legend.push({ color:'#16A34A', label:'B: Erhöhung', dash:false });
+  }
+  if (kombi) {
+    datasets.push({ label:'A+B kombiniert', data:thin(kombi), borderColor:'#9333EA', backgroundColor:'transparent', fill:false, tension:0.3, pointRadius:0, borderWidth:1.5, borderDash:[3,2] });
+    legend.push({ color:'#9333EA', label:'A+B kombiniert', dash:true });
+  }
+
+  document.getElementById('chart-legend').innerHTML = legend.map(l =>
+    `<div class="leg-item"><div class="leg-line" style="background:${l.color};${l.dash?'background:repeating-linear-gradient(90deg,'+l.color+' 0,'+l.color+' 4px,transparent 4px,transparent 7px)':''}"></div>${l.label}</div>`
+  ).join('');
+
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  if (mainChart) mainChart.destroy();
+  mainChart = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ display:false },
+        tooltip:{ callbacks:{ label: c => c.dataset.label+': '+c.parsed.y.toLocaleString('de-DE',{maximumFractionDigits:0})+' €' } }
+      },
+      scales:{
+        y:{ ticks:{ callback: v => v>=1000000?(v/1000000).toFixed(1).replace('.',',')+' Mio.€':v>=1000?Math.round(v/1000)+'k€':v+'€', font:{size:11} }, grid:{color:'rgba(0,0,0,0.04)'} },
+        x:{ ticks:{ font:{size:11}, autoSkip:true, maxRotation:0 } }
+      }
+    }
+  });
+}
+
+// ── MONTE CARLO ──
+function randn() {
+  let u=0,v=0;
+  while(u===0) u=Math.random();
+  while(v===0) v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+
+function simulateMCEnds(inp, pauseStart, pauseDauer, extraStart, extra, sigma, N) {
+  const mu_m = Math.log(1 + inp.rendite/100/12) - 0.5*(sigma/Math.sqrt(12))**2;
+  const sig_m = sigma / Math.sqrt(12);
+  const ends = [];
+  for (let s = 0; s < N; s++) {
+    let k = inp.start;
+    for (let m = 1; m <= inp.months; m++) {
+      const r = Math.exp(mu_m + sig_m * randn()) - 1;
+      let beitrag = inp.rate;
+      if (pauseStart !== null && m >= pauseStart && m < pauseStart + pauseDauer) beitrag = 0;
+      if (extraStart !== null && m >= extraStart) beitrag += extra;
+      k = k * (1 + r) + beitrag;
+    }
+    ends.push(k);
+  }
+  return ends.sort((a,b) => a-b);
+}
+
+function runMC() {
+  if (mode !== 'depot') return;
+  const btn = document.querySelector('.mc-run-btn');
+  btn.textContent = '⏳ Läuft...'; btn.disabled = true;
+  document.getElementById('mc-status').textContent = '1.000 Pfade werden berechnet...';
+
+  setTimeout(() => {
+    const inp = getInputs();
+    const sigma = parseFloat(document.getElementById('mc-vola').value) / 100;
+    const szenario = document.getElementById('mc-szenario').value;
+    const N = 1000;
+
+    // Determine which plan to simulate
+    let pauseStart = null, pauseDauer = 0, extraStart = null, extra = 0;
+    let labelText = 'Basisplan';
+    let deltaLabel = '';
+
+    if (szenario === 'a' && inp.aActive) {
+      pauseStart = inp.aPauseStart; pauseDauer = inp.aDauer;
+      labelText = 'Szenario A – Unterbrechung';
+      deltaLabel = 'ggü. Basisplan-Median';
+    } else if (szenario === 'b' && inp.bActive) {
+      extraStart = inp.bExtraStart; extra = inp.bExtra;
+      labelText = 'Szenario B – Erhöhung';
+      deltaLabel = 'ggü. Basisplan-Median';
+    } else if (szenario !== 'basis') {
+      document.getElementById('mc-status').textContent = '⚠ Szenario nicht aktiv – Basisplan wird simuliert.';
+      labelText = 'Basisplan (Fallback)';
+    }
+
+    const ends = simulateMCEnds(inp, pauseStart, pauseDauer, extraStart, extra, sigma, N);
+
+    // Always also compute basis median for delta (if szenario != basis)
+    let basisMedian = null;
+    if (szenario !== 'basis') {
+      const basisEnds = simulateMCEnds(inp, null, 0, null, 0, sigma, N);
+      basisMedian = basisEnds[Math.floor(basisEnds.length * 50 / 100)];
+    }
+
+    function pct(arr, p) { return arr[Math.floor(arr.length * p / 100)]; }
+    function deltaStr(val) {
+      if (basisMedian === null) return '';
+      const d = val - basisMedian;
+      const cls = d >= 0 ? 'color:var(--green)' : 'color:var(--red)';
+      return `<span style="${cls}">${d >= 0 ? '+' : ''}${fmt(Math.round(d))} ${deltaLabel}</span>`;
+    }
+
+    const p10 = Math.round(pct(ends, 10));
+    const p50 = Math.round(pct(ends, 50));
+    const p90 = Math.round(pct(ends, 90));
+
+    document.getElementById('mc-result-label').textContent = labelText;
+    document.getElementById('mc-p10').textContent = fmt(p10);
+    document.getElementById('mc-p50').textContent = fmt(p50);
+    document.getElementById('mc-p90').textContent = fmt(p90);
+    document.getElementById('mc-d10').innerHTML = deltaStr(p10);
+    document.getElementById('mc-d50').innerHTML = deltaStr(p50);
+    document.getElementById('mc-d90').innerHTML = deltaStr(p90);
+    document.getElementById('mc-result').style.display = 'block';
+    if (!document.getElementById('mc-status').textContent.includes('⚠'))
+      document.getElementById('mc-status').textContent = '✓ Fertig · ' + labelText;
+
+    btn.textContent = '▶ Neu simulieren'; btn.disabled = false;
+  }, 50);
+}
+
+// ── INIT ──
+recalc();
+</script>
+</body>
+</html>
