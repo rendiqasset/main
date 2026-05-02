@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rendiq · Geldtopf-Rechner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #0C1A2E;
+      --navy-mid:   #162845;
+      --slate:      #1D3461;
+      --gold:       #C9A84C;
+      --gold-light: #F9F4E8;
+      --grey:       #64748B;
+      --grey-light: #F5F6F8;
+      --grey-mid:   #E4E7ED;
+      --white:      #FFFFFF;
+      --ink:        #0C1A2E;
+      --ink-mid:    #334155;
+      --ink-light:  #64748B;
+      --border:     #DDE1EA;
+      --bg:         #F5F6F8;
+      --red:        #B33A2A;
+      --red-light:  #FBE9E8;
+      --radius:     10px;
+      --shadow:     0 2px 16px rgba(12,26,46,0.08);
+
+      /* Topf-Farben */
+      --t1: #2563EB; --t1-l: #EFF6FF;
+      --t2: #D97706; --t2-l: #FFFBEB;
+      --t3: #16A34A; --t3-l: #F0FDF4;
+      --t4: #9333EA; --t4-l: #FAF5FF;
+      --t5: #DC2626; --t5-l: #FEF2F2;
+      --t6: #0891B2; --t6-l: #ECFEFF;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    header {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.5px;
+      text-decoration: none;
+    }
+    .logo span { color: var(--gold); }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .nav-back {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink-light);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: var(--ink); }
+    .header-badge {
+      font-size: 11px;
+      background: var(--gold-light);
+      color: #8B6914;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-weight: 600;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 2.5rem 2rem 2rem;
+      max-width: 1040px;
+      margin: 0 auto;
+    }
+    .hero-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(24px, 3.5vw, 36px);
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--ink);
+      margin-bottom: 10px;
+      letter-spacing: -0.8px;
+    }
+    .hero p { font-size: 14px; color: var(--ink-light); line-height: 1.6; max-width: 560px; }
+
+    /* ── MAIN ── */
+    main { max-width: 1040px; margin: 0 auto; padding: 2rem; }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--ink-light);
+      margin-bottom: 14px;
+    }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+    /* ── OVERVIEW METRICS ── */
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+    .ov-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+    .ov-card.accent { background: var(--navy); border-color: var(--navy); }
+    .ov-label { font-size: 11px; color: var(--ink-light); margin-bottom: 4px; }
+    .ov-card.accent .ov-label { color: rgba(255,255,255,0.5); }
+    .ov-val { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--ink); letter-spacing: -0.5px; }
+    .ov-card.accent .ov-val { color: var(--white); }
+    .ov-card.gold-accent { background: var(--gold-light); border-color: var(--gold); }
+    .ov-card.gold-accent .ov-val { color: #8B6914; }
+
+    /* ── TOPF CARDS ── */
+    .topf-list { display: flex; flex-direction: column; gap: 16px; }
+
+    .topf-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    .topf-card:hover { box-shadow: var(--shadow); }
+
+    .topf-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--grey-light);
+      user-select: none;
+    }
+    .topf-icon {
+      font-size: 20px;
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .topf-title-wrap { flex: 1; }
+    .topf-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .topf-name input {
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 200px;
+    }
+    .topf-subtitle { font-size: 12px; color: var(--ink-light); margin-top: 2px; }
+    .topf-summary {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .topf-summary-item { text-align: right; }
+    .topf-summary-label { font-size: 10px; color: var(--ink-light); }
+    .topf-summary-val { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--ink); }
+    .topf-chevron { font-size: 12px; color: var(--ink-light); margin-left: 8px; transition: transform 0.2s; }
+    .topf-card.open .topf-chevron { transform: rotate(180deg); }
+    .topf-delete {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--ink-light);
+      font-size: 16px;
+      padding: 4px;
+      border-radius: 6px;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+    .topf-delete:hover { background: var(--red-light); color: var(--red); }
+
+    /* Progress bar in header */
+    .topf-progress-wrap {
+      height: 4px;
+      background: var(--grey-light);
+      overflow: hidden;
+    }
+    .topf-progress-bar {
+      height: 100%;
+      border-radius: 0;
+      transition: width 0.4s ease;
+    }
+
+    /* Expanded body */
+    .topf-body {
+      display: none;
+      padding: 20px 18px;
+    }
+    .topf-card.open .topf-body { display: block; }
+
+    .topf-inputs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ink-light);
+    }
+    .field input[type=number], .field input[type=text] {
+      background: var(--grey-light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.1); }
+
+    /* Result row */
+    .topf-result {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      padding: 14px;
+      background: var(--grey-light);
+      border-radius: 8px;
+      margin-bottom: 14px;
+    }
+    .res-item { text-align: center; }
+    .res-label { font-size: 10px; color: var(--ink-light); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .res-val { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; color: var(--ink); }
+    .res-val.pos { color: #16A34A; }
+    .res-val.neg { color: var(--red); }
+    .res-val.gold { color: #8B6914; }
+
+    /* Mini chart */
+    .topf-chart-wrap { position: relative; height: 120px; }
+
+    /* ── ADD TOPF BUTTON ── */
+    .add-topf-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px;
+      background: var(--white);
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-light);
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 12px;
+    }
+    .add-topf-btn:hover { border-color: var(--gold); color: var(--ink); background: var(--gold-light); }
+
+    /* ── SUMMARY CHART ── */
+    .summary-section {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 2rem;
+    }
+    .summary-chart-wrap { position: relative; height: 260px; }
+    .summary-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .leg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-mid); }
+    .leg-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── FOOTER ── */
+    footer { margin-top: 2rem; }
+    .footer-inner {
+      background: var(--navy);
+      color: rgba(255,255,255,0.5);
+      padding: 28px 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      max-width: 100%;
+    }
+    .footer-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .footer-logo { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; color: var(--white); text-decoration: none; }
+    .footer-logo span { color: var(--gold); }
+    .footer-note { font-size: 11px; color: rgba(255,255,255,0.35); max-width: 500px; }
+    .footer-link { font-size: 12px; color: rgba(255,255,255,0.6); text-decoration: none; font-weight: 500; }
+    .footer-link:hover { color: var(--gold); }
+
+    @media (max-width: 640px) {
+      main { padding: 1.25rem; }
+      .topf-summary { display: none; }
+      .hero { padding: 1.5rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">Rend<span>iq</span></a>
+  <div class="nav-right">
+    <a href="index.html" class="nav-back">← Alle Tools</a>
+    <div class="header-badge">Geldtopf-Rechner · Draft</div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-eyebrow">Geldtöpfe · Sparplanung</div>
+  <h1>Jeder Topf.<br>Sein Ziel. Seine Zeit.</h1>
+  <p>Definiere individuelle Sparziele, hinterlege Startkapital, monatliche Rate und Rendite – und sieh auf einen Blick wann jeder Topf voll ist.</p>
+</div>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <div class="section-label" style="margin-bottom:12px;">Gesamtübersicht</div>
+  <div class="overview-grid" id="overview-grid">
+    <div class="ov-card accent">
+      <div class="ov-label">Gesamtziel</div>
+      <div class="ov-val" id="ov-ziel">—</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-label">Bereits angespart</div>
+      <div class="ov-val" id="ov-ist">—</div>
+    </div>
+    <div class="ov-card gold-accent">
+      <div class="ov-label">Monatliche Gesamtrate</div>
+      <div class="ov-val" id="ov-rate">—</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-label">Längste Laufzeit</div>
+      <div class="ov-val" id="ov-laufzeit">—</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-label">Gesamtwert am Ende</div>
+      <div class="ov-val" id="ov-endwert">—</div>
+    </div>
+  </div>
+
+  <!-- SUMMARY CHART -->
+  <div class="summary-section">
+    <div class="section-label">Entwicklung aller Töpfe</div>
+    <div class="summary-legend" id="summary-legend"></div>
+    <div class="summary-chart-wrap">
+      <canvas id="summary-chart"></canvas>
+    </div>
+  </div>
+
+  <hr class="divider" style="margin-top:0">
+
+  <!-- TOPF LIST -->
+  <div class="section-label">Meine Töpfe</div>
+  <div class="topf-list" id="topf-list"></div>
+
+  <button class="add-topf-btn" onclick="addTopf()">
+    <span style="font-size:18px;">+</span> Neuen Topf hinzufügen
+  </button>
+
+  <hr class="divider">
+
+  <!-- DISCLAIMER -->
+  <div style="background:var(--grey-light);border-radius:var(--radius);padding:14px 18px;font-size:11px;color:var(--ink-light);line-height:1.7;">
+    <strong style="color:var(--ink-mid);">Hinweis:</strong> Alle Berechnungen sind modellhafte Drafts zu Informationszwecken. Renditeangaben basieren auf vereinfachten Zinseszinsmodellen ohne Steuern, Inflation oder Kosten. Kein Ersatz für individuelle Beratung.
+  </div>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <a href="index.html" class="footer-logo">Rend<span>iq</span></a>
+      <span style="font-size:12px;">Geldtopf-Rechner · Draft · Stand April 2026</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <span class="footer-note">Modellhafte Berechnung · Kein Ersatz für individuelle Beratung · Keine Anlageberatung</span>
+      <a href="index.html" class="footer-link">← Alle Tools</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── STATE ──
+const COLORS = [
+  { main:'#2563EB', light:'#EFF6FF' },
+  { main:'#D97706', light:'#FFFBEB' },
+  { main:'#16A34A', light:'#F0FDF4' },
+  { main:'#9333EA', light:'#FAF5FF' },
+  { main:'#DC2626', light:'#FEF2F2' },
+  { main:'#0891B2', light:'#ECFEFF' },
+];
+const ICONS = ['🛡️','🚗','👶','🏠','✈️','📱','🎓','💍','🏋️','🌴'];
+
+let topfs = [
+  { id:1, name:'Notgroschen',  icon:'🛡️', ist:2000,  rate:200,  rendite:1.5, monate:24,  ziel:6000  },
+  { id:2, name:'Auto',         icon:'🚗', ist:500,   rate:150,  rendite:2.0, monate:36,  ziel:8000  },
+  { id:3, name:'Kinder',       icon:'👶', ist:1000,  rate:100,  rendite:4.0, monate:120, ziel:20000 },
+];
+let nextId = 4;
+let summaryChart = null;
+const miniCharts = {};
+
+// ── FORMATTING ──
+function fmt(v) {
+  if (v >= 1000000) return (v/1000000).toFixed(2).replace('.',',') + ' Mio. €';
+  if (v >= 1000)    return v.toLocaleString('de-DE',{maximumFractionDigits:0}) + ' €';
+  return v.toLocaleString('de-DE',{minimumFractionDigits:0,maximumFractionDigits:0}) + ' €';
+}
+function fmtM(m) {
+  if (m < 12) return m + ' Mon.';
+  const j = Math.floor(m/12), mo = m%12;
+  return j + ' J.' + (mo > 0 ? ' ' + mo + ' M.' : '');
+}
+
+// ── CALC for one topf ──
+function calcTopf(t) {
+  const r = t.rendite / 100 / 12; // monthly rate
+  let k = t.ist;
+  for (let i = 0; i < t.monate; i++) {
+    k = k * (1 + r) + t.rate;
+  }
+  const endwert = k;
+  const eingezahlt = t.ist + t.rate * t.monate;
+  const zinsen = endwert - eingezahlt;
+  const zielErreicht = endwert >= t.ziel;
+
+  // How many months to reach ziel?
+  let monateZumZiel = null;
+  let kz = t.ist;
+  for (let i = 1; i <= 600; i++) {
+    kz = kz * (1 + r) + t.rate;
+    if (kz >= t.ziel) { monateZumZiel = i; break; }
+  }
+
+  // Time series
+  const series = [t.ist];
+  let ks = t.ist;
+  for (let i = 0; i < t.monate; i++) {
+    ks = ks * (1 + r) + t.rate;
+    series.push(ks);
+  }
+
+  const progress = Math.min(100, (t.ist / t.ziel) * 100);
+
+  return { endwert, eingezahlt, zinsen, zielErreicht, monateZumZiel, series, progress };
+}
+
+// ── RENDER ──
+function colorOf(idx) { return COLORS[idx % COLORS.length]; }
+
+function renderAll() {
+  renderTopfs();
+  renderOverview();
+  renderSummaryChart();
+}
+
+function renderTopfs() {
+  const list = document.getElementById('topf-list');
+  list.innerHTML = '';
+
+  topfs.forEach((t, idx) => {
+    const c = colorOf(idx);
+    const res = calcTopf(t);
+    const isOpen = t.open !== false;
+
+    const card = document.createElement('div');
+    card.className = 'topf-card' + (isOpen ? ' open' : '');
+    card.id = 'topf-' + t.id;
+
+    const progressPct = Math.min(100, t.ziel > 0 ? (t.ist / t.ziel * 100) : 0);
+    const endPct      = Math.min(100, t.ziel > 0 ? (res.endwert / t.ziel * 100) : 0);
+
+    card.innerHTML = `
+      <div class="topf-progress-wrap">
+        <div class="topf-progress-bar" style="width:${progressPct.toFixed(1)}%;background:${c.main};"></div>
+      </div>
+      <div class="topf-header" onclick="toggleTopf(${t.id})">
+        <div class="topf-icon" style="background:${c.light};font-size:18px;">${t.icon}</div>
+        <div class="topf-title-wrap">
+          <div class="topf-name">
+            <input type="text" value="${t.name}"
+              onclick="event.stopPropagation()"
+              oninput="updateTopfName(${t.id}, this.value)"
+              onkeydown="event.stopPropagation()"
+              style="color:${c.main};">
+          </div>
+          <div class="topf-subtitle">
+            Ziel: ${fmt(t.ziel)} · ${res.zielErreicht ? '✓ erreicht nach ' + fmtM(t.monate) : (res.monateZumZiel ? '⏱ ' + fmtM(res.monateZumZiel) + ' bis Ziel' : '⚠ Ziel nicht erreicht')}
+          </div>
+        </div>
+        <div class="topf-summary">
+          <div class="topf-summary-item">
+            <div class="topf-summary-label">Endwert</div>
+            <div class="topf-summary-val" style="color:${c.main};">${fmt(res.endwert)}</div>
+          </div>
+          <div class="topf-summary-item">
+            <div class="topf-summary-label">Zinsen</div>
+            <div class="topf-summary-val">+${fmt(res.zinsen)}</div>
+          </div>
+        </div>
+        <button class="topf-delete" onclick="event.stopPropagation();deleteTopf(${t.id})" title="Topf löschen">✕</button>
+        <span class="topf-chevron">▼</span>
+      </div>
+
+      <div class="topf-body">
+        <div class="topf-inputs">
+          <div class="field">
+            <label>IST-Wert (€)</label>
+            <input type="number" value="${t.ist}" min="0" step="100"
+              oninput="updateTopf(${t.id},'ist',this.value)">
+          </div>
+          <div class="field">
+            <label>Mtl. Sparrate (€)</label>
+            <input type="number" value="${t.rate}" min="0" step="10"
+              oninput="updateTopf(${t.id},'rate',this.value)">
+          </div>
+          <div class="field">
+            <label>Rendite / Zins p.a. (%)</label>
+            <input type="number" value="${t.rendite}" min="0" max="20" step="0.1"
+              oninput="updateTopf(${t.id},'rendite',this.value)">
+          </div>
+          <div class="field">
+            <label>Laufzeit (Monate)</label>
+            <input type="number" value="${t.monate}" min="1" max="600" step="1"
+              oninput="updateTopf(${t.id},'monate',this.value)">
+          </div>
+          <div class="field">
+            <label>Zielbetrag (€)</label>
+            <input type="number" value="${t.ziel}" min="0" step="500"
+              oninput="updateTopf(${t.id},'ziel',this.value)">
+          </div>
+          <div class="field">
+            <label>Icon</label>
+            <select onchange="updateTopf(${t.id},'icon',this.value)"
+              style="background:var(--grey-light);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:16px;font-family:'DM Sans',sans-serif;cursor:pointer;">
+              ${ICONS.map(ic => `<option value="${ic}" ${ic===t.icon?'selected':''}>${ic}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="topf-result">
+          <div class="res-item">
+            <div class="res-label">IST heute</div>
+            <div class="res-val">${fmt(t.ist)}</div>
+          </div>
+          <div class="res-item">
+            <div class="res-label">Eingezahlt gesamt</div>
+            <div class="res-val">${fmt(res.eingezahlt)}</div>
+          </div>
+          <div class="res-item">
+            <div class="res-label">Zinsen / Rendite</div>
+            <div class="res-val pos">+${fmt(res.zinsen)}</div>
+          </div>
+          <div class="res-item">
+            <div class="res-label">Endwert nach ${fmtM(t.monate)}</div>
+            <div class="res-val gold">${fmt(res.endwert)}</div>
+          </div>
+          <div class="res-item">
+            <div class="res-label">Zielbetrag</div>
+            <div class="res-val">${fmt(t.ziel)}</div>
+          </div>
+          <div class="res-item">
+            <div class="res-label">Ziel erreicht?</div>
+            <div class="res-val ${res.zielErreicht?'pos':'neg'}">${res.zielErreicht ? '✓ Ja' : res.monateZumZiel ? 'nach ' + fmtM(res.monateZumZiel) : '✗ Nein'}</div>
+          </div>
+        </div>
+
+        <div class="topf-chart-wrap">
+          <canvas id="chart-${t.id}"></canvas>
+        </div>
+      </div>
+    `;
+
+    list.appendChild(card);
+
+    if (isOpen) {
+      setTimeout(() => renderMiniChart(t, res, c), 0);
+    }
+  });
+}
+
+function renderMiniChart(t, res, c) {
+  const ctx = document.getElementById('chart-' + t.id);
+  if (!ctx) return;
+  if (miniCharts[t.id]) miniCharts[t.id].destroy();
+
+  const labels = [];
+  for (let i = 0; i <= t.monate; i++) {
+    if (i % Math.max(1, Math.floor(t.monate/10)) === 0 || i === t.monate)
+      labels.push(i === 0 ? 'Heute' : (i % 12 === 0 ? 'J.' + (i/12) : 'M.' + i));
+    else labels.push('');
+  }
+
+  const zielLine = new Array(t.monate + 1).fill(t.ziel);
+
+  miniCharts[t.id] = new Chart(ctx.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: t.name,
+          data: res.series,
+          borderColor: c.main,
+          backgroundColor: c.light + '88',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          borderWidth: 2,
+        },
+        {
+          label: 'Ziel',
+          data: zielLine,
+          borderColor: '#C9A84C',
+          backgroundColor: 'transparent',
+          borderDash: [4,3],
+          pointRadius: 0,
+          borderWidth: 1.5,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y.toLocaleString('de-DE',{maximumFractionDigits:0}) + ' €' } }
+      },
+      scales: {
+        y: { ticks: { callback: v => v >= 1000 ? Math.round(v/1000)+'k€' : v+'€', font:{size:10} }, grid:{color:'rgba(0,0,0,0.04)'} },
+        x: { ticks: { font:{size:10}, autoSkip:true, maxRotation:0 } }
+      }
+    }
+  });
+}
+
+function renderOverview() {
+  let totalZiel = 0, totalIst = 0, totalRate = 0, maxMonate = 0, totalEnd = 0;
+  topfs.forEach(t => {
+    const res = calcTopf(t);
+    totalZiel += t.ziel;
+    totalIst  += t.ist;
+    totalRate += t.rate;
+    maxMonate  = Math.max(maxMonate, t.monate);
+    totalEnd  += res.endwert;
+  });
+  document.getElementById('ov-ziel').textContent     = fmt(totalZiel);
+  document.getElementById('ov-ist').textContent      = fmt(totalIst);
+  document.getElementById('ov-rate').textContent     = fmt(totalRate) + '/Mon.';
+  document.getElementById('ov-laufzeit').textContent = fmtM(maxMonate);
+  document.getElementById('ov-endwert').textContent  = fmt(totalEnd);
+}
+
+function renderSummaryChart() {
+  const maxMonate = Math.max(...topfs.map(t => t.monate), 12);
+  const step = Math.max(1, Math.floor(maxMonate / 24));
+  const labels = [];
+  for (let i = 0; i <= maxMonate; i += step) labels.push(i === 0 ? 'Heute' : (i % 12 === 0 ? 'J.'+(i/12) : 'M.'+i));
+  if (labels[labels.length-1] !== 'M.'+maxMonate && labels[labels.length-1] !== 'J.'+(maxMonate/12))
+    labels.push(maxMonate % 12 === 0 ? 'J.'+(maxMonate/12) : 'M.'+maxMonate);
+
+  const datasets = topfs.map((t, idx) => {
+    const c = colorOf(idx);
+    const r = t.rendite / 100 / 12;
+    const data = [];
+    let k = t.ist;
+    const pts = [];
+    pts.push(k);
+    for (let i = 1; i <= maxMonate; i++) {
+      if (i <= t.monate) k = k * (1 + r) + t.rate;
+      pts.push(k);
+    }
+    for (let i = 0; i <= maxMonate; i += step) data.push(Math.round(pts[i]));
+    if (data.length < labels.length) data.push(Math.round(pts[maxMonate]));
+    return {
+      label: t.icon + ' ' + t.name,
+      data,
+      borderColor: c.main,
+      backgroundColor: c.light + '55',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 0,
+      borderWidth: 2,
+    };
+  });
+
+  const legend = document.getElementById('summary-legend');
+  legend.innerHTML = topfs.map((t, idx) => {
+    const c = colorOf(idx);
+    return `<div class="leg-item"><div class="leg-dot" style="background:${c.main}"></div>${t.icon} ${t.name}</div>`;
+  }).join('');
+
+  const ctx = document.getElementById('summary-chart').getContext('2d');
+  if (summaryChart) summaryChart.destroy();
+  summaryChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.parsed.y.toLocaleString('de-DE',{maximumFractionDigits:0}) + ' €' } }
+      },
+      scales: {
+        y: { ticks: { callback: v => v >= 1000 ? Math.round(v/1000)+'k€' : v+'€', font:{size:11} }, grid:{color:'rgba(0,0,0,0.05)'} },
+        x: { ticks: { font:{size:11}, autoSkip:true, maxRotation:0 } }
+      }
+    }
+  });
+}
+
+// ── ACTIONS ──
+function toggleTopf(id) {
+  const t = topfs.find(x => x.id === id);
+  if (!t) return;
+  t.open = t.open === false ? true : false;
+  renderAll();
+}
+
+function updateTopf(id, key, val) {
+  const t = topfs.find(x => x.id === id);
+  if (!t) return;
+  if (key === 'icon') t[key] = val;
+  else t[key] = parseFloat(val) || 0;
+  // Only update results, don't re-render DOM (avoids focus loss)
+  updateTopfResults(id);
+  renderOverview();
+  renderSummaryChart();
+}
+
+function updateTopfResults(id) {
+  const idx = topfs.findIndex(x => x.id === id);
+  const t = topfs[idx];
+  if (!t) return;
+  const c = colorOf(idx);
+  const res = calcTopf(t);
+
+  // Progress bar
+  const progressPct = Math.min(100, t.ziel > 0 ? (t.ist / t.ziel * 100) : 0);
+  const pb = document.querySelector('#topf-' + id + ' .topf-progress-bar');
+  if (pb) pb.style.width = progressPct.toFixed(1) + '%';
+
+  // Subtitle
+  const sub = document.querySelector('#topf-' + id + ' .topf-subtitle');
+  if (sub) sub.textContent = 'Ziel: ' + fmt(t.ziel) + ' · ' + (res.zielErreicht ? '✓ erreicht nach ' + fmtM(t.monate) : (res.monateZumZiel ? '⏱ ' + fmtM(res.monateZumZiel) + ' bis Ziel' : '⚠ Ziel nicht erreicht'));
+
+  // Summary vals in header
+  const sumVals = document.querySelectorAll('#topf-' + id + ' .topf-summary-val');
+  if (sumVals[0]) sumVals[0].textContent = fmt(res.endwert);
+  if (sumVals[1]) sumVals[1].textContent = '+' + fmt(res.zinsen);
+
+  // Result grid items
+  const resVals = document.querySelectorAll('#topf-' + id + ' .res-val');
+  if (resVals[0]) resVals[0].textContent = fmt(t.ist);
+  if (resVals[1]) resVals[1].textContent = fmt(res.eingezahlt);
+  if (resVals[2]) { resVals[2].textContent = '+' + fmt(res.zinsen); }
+  if (resVals[3]) { resVals[3].textContent = fmt(res.endwert); resVals[3].querySelector && null; const el = resVals[3]; el.textContent = fmt(res.endwert); }
+  if (resVals[4]) resVals[4].textContent = fmt(t.ziel);
+  if (resVals[5]) {
+    resVals[5].textContent = res.zielErreicht ? '✓ Ja' : (res.monateZumZiel ? 'nach ' + fmtM(res.monateZumZiel) : '✗ Nein');
+    resVals[5].className = 'res-val ' + (res.zielErreicht ? 'pos' : 'neg');
+  }
+
+  // Re-render mini chart
+  renderMiniChart(t, res, c);
+}
+
+function updateTopfName(id, val) {
+  const t = topfs.find(x => x.id === id);
+  if (!t) return;
+  t.name = val;
+  renderSummaryChart();
+  // No renderAll – just update the subtitle if needed
+}
+
+function deleteTopf(id) {
+  if (topfs.length <= 1) { alert('Mindestens ein Topf muss vorhanden bleiben.'); return; }
+  topfs = topfs.filter(x => x.id !== id);
+  if (miniCharts[id]) { miniCharts[id].destroy(); delete miniCharts[id]; }
+  renderAll();
+}
+
+function addTopf() {
+  const idx = topfs.length;
+  topfs.push({
+    id: nextId++,
+    name: 'Neues Ziel',
+    icon: ICONS[idx % ICONS.length],
+    ist: 0,
+    rate: 100,
+    rendite: 2.0,
+    monate: 24,
+    ziel: 5000,
+    open: true,
+  });
+  renderAll();
+  setTimeout(() => {
+    const last = document.querySelector('.topf-card:last-child');
+    if (last) last.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+// ── INIT ──
+topfs.forEach(t => t.open = true);
+renderAll();
+</script>
+</body>
+</html>
