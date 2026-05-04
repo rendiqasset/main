@@ -395,6 +395,11 @@
     <div class="header-badge">AV-Depot Rechner · Draft</div>
   </div>
 </header>
+<div style="background:var(--navy,#0C1A2E);border-bottom:1px solid rgba(255,255,255,0.06);padding:5px 2rem;display:flex;align-items:center;justify-content:flex-end;gap:16px;font-size:11px;font-family:'DM Sans',sans-serif;">
+  <span style="color:rgba(255,255,255,0.35);">AV-Depot Rechner</span>
+  <span style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border-radius:20px;padding:2px 10px;font-weight:600;letter-spacing:0.04em;">v1.4</span>
+  <span style="color:rgba(255,255,255,0.25);">Stand: Mai 2026 · Draft</span>
+</div>
 
 <div class="hero">
   <div class="hero-eyebrow">Altersvorsorgereformgesetz · Bundestag beschlossen 27.03.2026</div>
@@ -524,6 +529,17 @@
         <div class="depot-feature"><span>Abgeltungssteuer</span><span class="check">✗ (Anspar)</span></div>
         <div class="depot-feature"><span>Beratung</span><span class="cross">✗</span></div>
         <div class="depot-feature"><span>Anlage UCITS-ETFs</span><span class="check">✓</span></div>
+        <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--red);margin-bottom:7px;">Behavioral Gap (Vanguard)</div>
+          <div class="depot-kosten-label">
+            <span style="font-size:11px;color:var(--ink-light);">Renditenachteil durch Verhalten</span>
+            <strong id="gap-val" style="color:var(--red);">−1,50%</strong>
+          </div>
+          <input type="range" class="depot-slider" id="behavioral-gap" min="0" max="3.0" step="0.25" value="1.5"
+            oninput="document.getElementById('gap-val').textContent='−'+parseFloat(this.value).toFixed(2).replace('.',',')+'%';calc();">
+          <div class="depot-slider-range"><span>0%</span><span>1,5% (Median)</span><span>3,0%</span></div>
+          <div style="font-size:10px;color:var(--ink-light);margin-top:4px;">Timing-Fehler, zu teuer, kein Rebalancing (Vanguard: ~150 Bp. p.a.)</div>
+        </div>
       </div>
 
       <div class="depot-card d3">
@@ -544,7 +560,7 @@
         <div class="depot-feature"><span>Beratung & Betreuung</span><span class="check">✓</span></div>
         <div class="depot-feature"><span>Strategie & Rebalancing</span><span class="check">✓</span></div>
         <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
-          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--green);margin-bottom:7px;">Advisor's Alpha (Vanguard)</div>
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--green);margin-bottom:7px;">Gap geschlossen durch Beratung</div>
           <div id="d3-alpha-checks"></div>
           <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
             <span style="font-size:11px;color:var(--ink-light);">Alpha gesamt:</span>
@@ -568,7 +584,7 @@
         <!-- Links: Erklärung + Komponenten-Balken -->
         <div style="flex:1;min-width:260px;">
           <div style="font-size:12px;color:var(--ink-light);line-height:1.6;margin-bottom:12px;">
-            Nach Vanguard-Studie (2020) kann professionelle Beratung einen Mehrwert von <strong style="color:var(--gold);">~3% p.a.</strong> erzielen &ndash; durch Verhalten, Struktur und Disziplin, nicht durch Market Timing. Aktivierte Komponenten flie&szlig;en direkt in Endkapital und Monte-Carlo-Simulation ein.
+            Der Behavioral Gap entsteht weil DIY-Anleger die Marktrendite <em>nicht vollst&auml;ndig</em> erzielen &ndash; Timing-Fehler, zu teure Produkte, fehlendes Rebalancing. Beratung schlie&szlig;t diesen Gap. W&auml;hle welche Komponenten du abdeckst.
           </div>
           <div id="alpha-bars"></div>
         </div>
@@ -578,7 +594,7 @@
           <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-light);margin-bottom:8px;">Komponenten aktivieren</div>
           <div id="alpha-toggles"></div>
           <div style="margin-top:10px;background:var(--gold-light);border-radius:var(--radius);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:12px;color:#8B6914;font-weight:500;">Aktiviertes Alpha p.a.</span>
+            <span style="font-size:12px;color:#8B6914;font-weight:500;">Geschlossener Gap p.a.</span>
             <strong id="alpha-total-val" style="font-size:15px;color:#8B6914;">0,00%</strong>
           </div>
           <div style="font-size:11px;color:var(--ink-light);margin-top:8px;">Quelle: Vanguard, Juni 2020 (UK/Europa-Daten). Kein garantierter Wert.</div>
@@ -697,7 +713,7 @@
   <div class="disclaimer">
     <strong>Hinweise zur Berechnung</strong><br>
     <strong>Depot ①:</strong> Abgeltungssteuer (26,375% inkl. Soli) vereinfacht als pauschale Renditeminderung von ~0,5% p.a. eingerechnet. Vorabpauschale vernachlässigt. Effektivkosten und Abgeltungssteuer-Malus reduzieren die Nettorendite auf das Depotvolumen.<br>
-    <strong>Depot ② & ③:</strong> Zulagen (Grund- + Kinderzulage) fließen von der ZfA direkt ins Depot und werden als Teil des jährlichen Einzahlungsbetrags behandelt. Effektivkosten reduzieren ausschließlich die Nettorendite auf das Depotvolumen – keine ratierlichen Beitragsabzüge. Keine Abgeltungssteuer in der Ansparphase. <strong>Steuervorteil</strong> aus der Günstigerprüfung ist eine Steuererstattung an den Kunden und nicht im Depot enthalten.<br>
+    <strong>Depot ② & ③:</strong> Zulagen (Grund- + Kinderzulage) fließen von der ZfA direkt ins Depot und werden als Teil des jährlichen Einzahlungsbetrags behandelt. Effektivkosten reduzieren ausschließlich die Nettorendite auf das Depotvolumen – keine ratierlichen Beitragsabzüge. Keine Abgeltungssteuer in der Ansparphase. <strong>Steuervorteil</strong> aus der Günstigerprüfung ist eine Steuererstattung an den Kunden und nicht im Depot enthalten. <strong>Depot ②</strong> enthält den einstellbaren Behavioral Gap (Standard 1,5% p.a.) – den typischen Renditenachteil von DIY-Anlegern laut Vanguard (2020) durch schlechtes Timing und fehlende Struktur. <strong>Depot ③</strong> schließt diesen Gap durch Beratung.<br>
     <strong>Nachgelagerte Besteuerung</strong> der AV-Depot-Auszahlung ist nicht eingerechnet und wirkt gegenläufig. Förderlogik nach Altersvorsorgereformgesetz (Bundestag, 27.03.2026). Produktstart 01.01.2027. Bundesrat-Zustimmung ausstehend. Keine Anlageberatung.
   </div>
 
@@ -794,11 +810,19 @@ function calc() {
   const sv         = Math.max(0, svBrutto - zulagen);
 
   const jahre = Math.max(1, rente - alter);
-  const K1 = fvFreies(beitrag, br, k1, jahre);
-  const K2 = fvKosten(jb23,   br, k2, jahre);
+  // Behavioral Gap: DIY investor loses this % p.a. vs benchmark (Vanguard)
+  const gapEl = document.getElementById('behavioral-gap');
+  const behavioralGap = gapEl ? parseFloat(gapEl.value) / 100 : 0.015;
+  // Alpha: which gap components does the advisor close?
   const alphaPct = (typeof getActiveBp === 'function' ? getActiveBp() : 0) / 10000;
-  const k3eff = Math.max(0, k3 - alphaPct); // Alpha erhöht Nettorendite = senkt effektive Kostenlast
-  const K3 = fvKosten(jb23, br, k3eff, jahre);
+  // DIY AV: volle Rendite minus Kosten minus Behavioral Gap
+  const k2gap = k2 + behavioralGap;
+  // Betreut: volle Rendite minus Kosten (schließt Gap durch Beratung, max. aktivierter Alpha)
+  const closedGap = Math.min(behavioralGap, alphaPct);
+  const k3eff = Math.max(0, k3); // keine Gap – Berater agiert rationaler
+  const K1 = fvFreies(beitrag, br, k1, jahre);
+  const K2 = fvKosten(jb23, br, k2gap, jahre);  // DIY: mit Behavioral Gap
+  const K3 = fvKosten(jb23, br, k3eff, jahre);  // Betreut: ohne Gap
 
   // Förderung
   document.getElementById('f-gz').textContent    = fmt(gz);
@@ -810,9 +834,9 @@ function calc() {
   // Ergebniskarten
   const best = Math.max(K1, K2, K3);
   const cards = [
-    { id:'d1', n:'① Freies ETF-Depot', v:K1, sub:`Nettorendite: ${fmtP((br-k1-0.005)*100,1)} p.a.`, ref:K1 },
-    { id:'d2', n:'② DIY AV-Depot',      v:K2, sub:`Nettorendite: ${fmtP((br-k2)*100,1)} p.a. + Zulagen`, ref:K1 },
-    { id:'d3', n:'③ Betreutes AV-Depot', v:K3, sub:`Nettorendite: ${fmtP((br-k3eff)*100,1)} p.a. + Zulagen + Alpha`, ref:K1 },
+    { id:'d1', n:'① Freies ETF-Depot', v:K1, sub:`Nettorendite: ${fmtP((br-k1-0.005)*100,1)} p.a. (inkl. Abgst.)`, ref:K1 },
+    { id:'d2', n:'② DIY AV-Depot',      v:K2, sub:`Nettorendite: ${fmtP((br-k2gap)*100,1)} p.a. (inkl. ${fmtP(behavioralGap*100,1)} Gap)`, ref:K1 },
+    { id:'d3', n:'③ Betreutes AV-Depot', v:K3, sub:`Nettorendite: ${fmtP((br-k3eff)*100,1)} p.a. (Gap geschlossen)`, ref:K1 },
   ];
 
   document.getElementById('result-grid').innerHTML = cards.map(c => {
@@ -833,7 +857,7 @@ function calc() {
     </div>`;
   }).join('');
 
-  updateChart(jahre, beitrag, jb23, br, k1, k2, k3eff);
+  updateChart(jahre, beitrag, jb23, br, k1, k2gap, k3eff);
 }
 
 function updateChart(jahre, jb1, jb23, br, k1, k2, k3) {
@@ -1082,7 +1106,8 @@ function runMC() {
     const k1         = parseFloat(document.getElementById('k1').value) / 100;
     const k2         = parseFloat(document.getElementById('k2').value) / 100;
     const k3raw      = parseFloat(document.getElementById('k3').value) / 100;
-    const k3eff      = Math.max(0, k3raw - getActiveBp() / 10000); // Alpha eingerechnet
+    const k3eff      = Math.max(0, k3raw); // Betreut: volle Rendite minus Kosten, kein Gap
+    const gapMC      = parseFloat(document.getElementById('behavioral-gap')?.value || 1.5) / 100;
     const sigma      = parseFloat(document.getElementById('mc-vola').value) / 100;
     const ziel       = parseFloat(document.getElementById('mc-ziel').value) || 200000;
     const jahre      = Math.max(1, rentenalter - alter);
@@ -1095,8 +1120,8 @@ function runMC() {
     const jb23 = beitrag + zulagen;
 
     const mu1 = Math.max(0, br - k1 - 0.005);
-    const mu2 = Math.max(0, br - k2);
-    const mu3 = Math.max(0, br - k3eff); // Alpha-adjustiert
+    const mu2 = Math.max(0, br - k2 - gapMC); // DIY: mit Behavioral Gap
+    const mu3 = Math.max(0, br - k3eff);       // Betreut: kein Gap
 
     // Simulate end values
     const end1 = simulatePaths(jb1,  mu1, sigma, jahre, N).sort((a,b)=>a-b);
