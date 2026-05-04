@@ -913,7 +913,6 @@ function renderD3AlphaChecks() {
   el.querySelectorAll('input[type=checkbox]').forEach(cb => {
     cb.addEventListener('change', function() {
       alphaEnabled[this.dataset.id] = this.checked;
-      renderD3AlphaChecks();
       updateAlpha();
       calc();
     });
@@ -950,12 +949,10 @@ function renderAlphaToggles() {
   document.querySelectorAll('#alpha-toggles input[type=checkbox]').forEach(cb => {
     cb.addEventListener('change', function() {
       alphaEnabled[this.dataset.id] = this.checked;
-      renderD3AlphaChecks();
       updateAlpha();
       calc();
     });
   });
-  renderD3AlphaChecks();
 }
 
 function getActiveBp() {
@@ -963,12 +960,28 @@ function getActiveBp() {
 }
 
 function updateAlpha() {
+  // Update bar colours without re-rendering checkboxes (avoids re-render loop)
   renderAlphaBars();
-  renderAlphaToggles();
+  // Update toggle label colours in place
+  document.querySelectorAll('#alpha-toggles label').forEach(lbl => {
+    const cb = lbl.querySelector('input[type=checkbox]');
+    if (!cb) return;
+    const on = alphaEnabled[cb.dataset.id];
+    lbl.style.background = on ? 'var(--green-light)' : 'var(--grey-light)';
+    lbl.style.borderColor = on ? 'var(--green-mid)' : 'var(--border)';
+    cb.checked = !!on;
+  });
+  // Update d3 card checkboxes in place
+  document.querySelectorAll('#d3-alpha-checks input[type=checkbox]').forEach(cb => {
+    cb.checked = !!alphaEnabled[cb.dataset.id];
+  });
+  // Update totals
   const alphaBp  = getActiveBp();
   const alphaPct = alphaBp / 10000;
   const el = document.getElementById('alpha-total-val');
   if (el) el.textContent = (alphaPct * 100).toFixed(2).replace('.', ',') + '%';
+  const totalEl = document.getElementById('d3-alpha-total');
+  if (totalEl) totalEl.textContent = '+' + alphaBp + ' Bp. (+' + (alphaBp/100).toFixed(2).replace('.',',') + '% p.a.)';
 }
 
 // Init alpha UI (data populated after main calc() runs below)
