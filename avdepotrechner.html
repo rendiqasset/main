@@ -810,19 +810,30 @@ function calc() {
   const sv         = Math.max(0, svBrutto - zulagen);
 
   const jahre = Math.max(1, rente - alter);
-  // Behavioral Gap: DIY investor loses this % p.a. vs benchmark (Vanguard)
+
+  // ── Behavioral Gap Logik (Vanguard) ──
+  // DIY-Anleger erzielt die Marktrendite NICHT vollständig
+  // Berater schließt den Gap – aber nur den Anteil der aktivierten Komponenten
   const gapEl = document.getElementById('behavioral-gap');
   const behavioralGap = gapEl ? parseFloat(gapEl.value) / 100 : 0.015;
-  // Alpha: which gap components does the advisor close?
+
+  // Aktivierter Alpha = wie viel des Gaps der Berater schließt (Bp → %)
   const alphaPct = (typeof getActiveBp === 'function' ? getActiveBp() : 0) / 10000;
-  // DIY AV: volle Rendite minus Kosten minus Behavioral Gap
-  const k2gap = k2 + behavioralGap;
-  // Betreut: volle Rendite minus Kosten (schließt Gap durch Beratung, max. aktivierter Alpha)
+
+  // Geschlossener Gap: Berater kann max. den vollen Gap schließen
   const closedGap = Math.min(behavioralGap, alphaPct);
-  const k3eff = Math.max(0, k3); // keine Gap – Berater agiert rationaler
+  const remainingGap = behavioralGap - closedGap; // Rest-Gap den Betreut noch trägt
+
+  // Effektive Kostensätze:
+  // ① Freies Depot: Kosten + Abgeltungssteuer-Malus (in fvFreies)
+  // ② DIY AV: Kosten + voller Behavioral Gap
+  // ③ Betreut: Kosten + Rest-Gap (nur wenn nicht alle Komponenten aktiv)
+  const k2gap = k2 + behavioralGap;
+  const k3eff = k3 + remainingGap;
+
   const K1 = fvFreies(beitrag, br, k1, jahre);
-  const K2 = fvKosten(jb23, br, k2gap, jahre);  // DIY: mit Behavioral Gap
-  const K3 = fvKosten(jb23, br, k3eff, jahre);  // Betreut: ohne Gap
+  const K2 = fvKosten(jb23, br, k2gap, jahre);
+  const K3 = fvKosten(jb23, br, k3eff, jahre);
 
   // Förderung
   document.getElementById('f-gz').textContent    = fmt(gz);
@@ -834,9 +845,9 @@ function calc() {
   // Ergebniskarten
   const best = Math.max(K1, K2, K3);
   const cards = [
-    { id:'d1', n:'① Freies ETF-Depot', v:K1, sub:`Nettorendite: ${fmtP((br-k1-0.005)*100,1)} p.a. (inkl. Abgst.)`, ref:K1 },
-    { id:'d2', n:'② DIY AV-Depot',      v:K2, sub:`Nettorendite: ${fmtP((br-k2gap)*100,1)} p.a. (inkl. ${fmtP(behavioralGap*100,1)} Gap)`, ref:K1 },
-    { id:'d3', n:'③ Betreutes AV-Depot', v:K3, sub:`Nettorendite: ${fmtP((br-k3eff)*100,1)} p.a. (Gap geschlossen)`, ref:K1 },
+    { id:'d1', n:'① Freies ETF-Depot',   v:K1, sub:`Nettorendite: ${fmtP((br-k1-0.005)*100,1)} p.a. (inkl. Abgst.)`, ref:K1 },
+    { id:'d2', n:'② DIY AV-Depot',        v:K2, sub:`Nettorendite: ${fmtP((br-k2gap)*100,1)} p.a. (inkl. ${fmtP(behavioralGap*100,2)} Gap)`, ref:K1 },
+    { id:'d3', n:'③ Betreutes AV-Depot',  v:K3, sub:`Nettorendite: ${fmtP((br-k3eff)*100,1)} p.a. (Gap ${fmtP(closedGap*100,2)} geschlossen)`, ref:K1 },
   ];
 
   document.getElementById('result-grid').innerHTML = cards.map(c => {
@@ -1000,10 +1011,17 @@ function updateAlpha() {
     cb.checked = !!alphaEnabled[cb.dataset.id];
   });
   // Update totals
-  const alphaBp  = getActiveBp();
-  const alphaPct = alphaBp / 10000;
+  const alphaBpU  = getActiveBp();
+  const alphaPctU = alphaBpU / 10000;
+  const gapElU    = document.getElementById('behavioral-gap');
+  const gapU      = gapElU ? parseFloat(gapElU.value) / 100 : 0.015;
+  const closedU   = Math.min(gapU, alphaPctU);
   const el = document.getElementById('alpha-total-val');
-  if (el) el.textContent = (alphaPct * 100).toFixed(2).replace('.', ',') + '%';
+  if (el) {
+    const pct = (closedU * 100).toFixed(2).replace('.', ',');
+    const of  = (gapU * 100).toFixed(2).replace('.', ',');
+    el.textContent = pct + '% von ' + of + '% Gap geschlossen';
+  }
   const totalEl = document.getElementById('d3-alpha-total');
   if (totalEl) totalEl.textContent = '+' + alphaBp + ' Bp. (+' + (alphaBp/100).toFixed(2).replace('.',',') + '% p.a.)';
 }
@@ -1119,9 +1137,12 @@ function runMC() {
     const jb1  = beitrag;
     const jb23 = beitrag + zulagen;
 
+    const alphaMC     = (typeof getActiveBp === 'function' ? getActiveBp() : 0) / 10000;
+    const closedGapMC = Math.min(gapMC, alphaMC);
+    const remainGapMC = gapMC - closedGapMC;
     const mu1 = Math.max(0, br - k1 - 0.005);
-    const mu2 = Math.max(0, br - k2 - gapMC); // DIY: mit Behavioral Gap
-    const mu3 = Math.max(0, br - k3eff);       // Betreut: kein Gap
+    const mu2 = Math.max(0, br - k2 - gapMC);           // DIY: voller Gap
+    const mu3 = Math.max(0, br - k3raw - remainGapMC);  // Betreut: Rest-Gap
 
     // Simulate end values
     const end1 = simulatePaths(jb1,  mu1, sigma, jahre, N).sort((a,b)=>a-b);
