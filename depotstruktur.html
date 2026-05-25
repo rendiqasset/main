@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Depotstruktur-Tool · Rendiq</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root{--navy:#0C1A2E;--border:#DDE1EA;--radius:12px;--ink:#0C1A2E}
+    body{font-family:'DM Sans',sans-serif;margin:0;background:#fff;color:var(--ink);}
+    nav{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .container{max-width:980px;margin:28px auto;padding:0 18px}
+    h1{font-family:'Syne',sans-serif;margin-bottom:6px}
+    .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse}
+    td,th{padding:8px;border-bottom:1px solid #f0f0f0}
+    input[type=number]{width:100%;padding:6px;border:1px solid var(--border);border-radius:6px}
+    .row-actions{display:flex;gap:8px}
+    button{background:var(--navy);color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer}
+    .muted{color:#64748B;font-size:13px}
+    .results{font-weight:700;margin-top:12px}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html" style="text-decoration:none;color:var(--navy);font-weight:700;font-family:'Syne'">Rend<span style="color:#C9A84C">iq</span></a>
+    <a href="avdepotrechner.html" style="text-decoration:none;color:var(--navy);">← Zurück</a>
+  </nav>
+
+  <main class="container">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <h1>Depotstruktur-Tool</h1>
+      <span style="background:rgba(0,0,0,0.06);color:var(--ink);border-radius:18px;padding:6px 10px;font-weight:600;font-size:13px">v0.1 · Draft</span>
+    </div>
+    <p class="muted">Modell zur Zusammensetzung eines Depots: Gewichtungen, Risiko-Klassen und einfache Kennzahlen. Draft.</p>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Asset-Allokation</strong>
+        <div class="row-actions"><button id="add-row">Asset hinzufügen</button></div>
+      </div>
+      <table id="asset-table">
+        <thead>
+          <tr><th style="width:50%">Asset</th><th style="width:30%">Gewichtung (%)</th><th style="width:20%">Aktionen</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="text" value="Aktien (global)" class="asset-name"></td>
+            <td><input type="number" value="60" min="0" max="100" class="asset-wt"></td>
+            <td><button class="del">Löschen</button></td>
+          </tr>
+          <tr>
+            <td><input type="text" value="Anleihen" class="asset-name"></td>
+            <td><input type="number" value="30" min="0" max="100" class="asset-wt"></td>
+            <td><button class="del">Löschen</button></td>
+          </tr>
+          <tr>
+            <td><input type="text" value="Liquidität" class="asset-name"></td>
+            <td><input type="number" value="10" min="0" max="100" class="asset-wt"></td>
+            <td><button class="del">Löschen</button></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="display:flex;gap:12px;margin-top:12px;align-items:center">
+        <button id="compute">Berechnen</button>
+        <div class="muted">Summe: <span id="sum-val">100%</span></div>
+      </div>
+
+      <div class="results card" id="results" style="display:none">
+        <div id="norm-msg"></div>
+        <div id="simple-metrics"></div>
+      </div>
+    </div>
+
+    <div class="card muted">
+      <strong>Hinweis</strong>
+      <p>Dieses Tool ist ein erster Prototyp zur Visualisierung von Allokationen. Keine Anlageberatung.</p>
+    </div>
+  </main>
+
+  <script>
+    function updateSum(){
+      const wts = Array.from(document.querySelectorAll('.asset-wt')).map(i=>parseFloat(i.value)||0);
+      const s = wts.reduce((a,b)=>a+b,0);
+      document.getElementById('sum-val').textContent = Math.round(s*100)/100 + '%';
+      return s;
+    }
+    document.getElementById('add-row').addEventListener('click', ()=>{
+      const tb = document.querySelector('#asset-table tbody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><input type="text" value="Neues Asset" class="asset-name"></td><td><input type="number" value="0" min="0" max="100" class="asset-wt"></td><td><button class="del">Löschen</button></td>`;
+      tb.appendChild(tr);
+      tr.querySelector('.del').addEventListener('click', e=>{tr.remove(); updateSum();});
+      tr.querySelector('.asset-wt').addEventListener('input', updateSum);
+      updateSum();
+    });
+    document.querySelectorAll('.del').forEach(b=>b.addEventListener('click', e=>{ e.target.closest('tr').remove(); updateSum(); }));
+    document.querySelectorAll('.asset-wt').forEach(i=>i.addEventListener('input', updateSum));
+
+    document.getElementById('compute').addEventListener('click', ()=>{
+      const names = Array.from(document.querySelectorAll('.asset-name')).map(i=>i.value);
+      const wts = Array.from(document.querySelectorAll('.asset-wt')).map(i=>parseFloat(i.value)||0);
+      const sum = wts.reduce((a,b)=>a+b,0);
+      const res = document.getElementById('results');
+      res.style.display = 'block';
+      if(sum === 0) { document.getElementById('norm-msg').textContent = 'Summe = 0. Bitte Gewichte eingeben.'; document.getElementById('simple-metrics').textContent=''; return; }
+      const norm = wts.map(w=>Math.round(w/sum*10000)/100);
+      document.getElementById('norm-msg').textContent = 'Normalisierte Gewichte (%): ' + names.map((n,i)=>`${n}: ${norm[i]}%`).join(' · ');
+      // Simple risk proxy: Risk = weighted sum of assumed volatilities
+      const vols = wts.map((_,i)=>{ const n=names[i].toLowerCase(); if(n.includes('aktien')) return 14; if(n.includes('anleihen')) return 6; if(n.includes('liquid')) return 1; return 8; });
+      const estVol = Math.round(norm.reduce((s,w,i)=>s + (w/100)*vols[i],0)*100)/100;
+      document.getElementById('simple-metrics').textContent = 'Geschätzte Portfoliovola (vereinfachter Proxy): ~' + estVol + '% p.a.';
+    });
+
+    updateSum();
+  </script>
+</body>
+</html>
