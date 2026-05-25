@@ -835,6 +835,8 @@ function calc() {
   const K2 = fvKosten(jb23, br, k2gap, jahre);
   const K3 = fvKosten(jb23, br, k3eff, jahre);
 
+  updateAlpha();
+
   // Förderung
   document.getElementById('f-gz').textContent    = fmt(gz);
   document.getElementById('f-kz').textContent    = fmt(kz);
@@ -1023,7 +1025,7 @@ function updateAlpha() {
     el.textContent = pct + '% von ' + of + '% Gap geschlossen';
   }
   const totalEl = document.getElementById('d3-alpha-total');
-  if (totalEl) totalEl.textContent = '+' + alphaBp + ' Bp. (+' + (alphaBp/100).toFixed(2).replace('.',',') + '% p.a.)';
+  if (totalEl) totalEl.textContent = '+' + alphaBpU + ' Bp. (+' + (alphaBpU/100).toFixed(2).replace('.',',') + '% p.a.)';
 }
 
 // Init alpha UI (data populated after main calc() runs below)
