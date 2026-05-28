@@ -472,9 +472,13 @@ header {
 .why-inner,
 .cta-inner,
 .footer-inner,
-.hero-inner,
 main {
   max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hero-inner {
+  max-width: none;
   margin: 0 auto;
 }
 
@@ -500,7 +504,7 @@ main {
   font-size: 15px;
   color: var(--ink-light);
   font-weight: 300;
-  max-width: 520px;
+  max-width: 100%;
   line-height: 1.6;
   margin-bottom: 48px;
 }
@@ -1287,7 +1291,7 @@ footer a { color: var(--navy-light); text-decoration: none; }
 .footer-left { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
 .footer-logo { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; color:var(--white); text-decoration:none; }
 .footer-logo span { color:var(--gold); }
-.footer-note { font-size:11px; color:rgba(255,255,255,0.35); max-width: 500px; }
+.footer-note { font-size:11px; color:rgba(255,255,255,0.35); max-width: 100%; }
 .footer-link { font-size:12px; color:rgba(255,255,255,0.6); text-decoration:none; font-weight:500; }
 .footer-link:hover { color:var(--gold); }
 
