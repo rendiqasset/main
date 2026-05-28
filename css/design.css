@@ -238,8 +238,8 @@ header {
   background: var(--violet-pale);
   padding: 5px 14px;
   border-radius: 20px;
-  margin-bottom: 20px;
-  line-height: 1.4;
+  margin-bottom: 24px;
+  line-height: 1.5;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
@@ -257,10 +257,10 @@ header {
   font-family: 'Syne', sans-serif;
   font-size: clamp(24px, 4vw, 58px);
   font-weight: 800;
-  line-height: 1.08;
+  line-height: 1.16;
   letter-spacing: -1.5px;
   color: var(--navy);
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   max-width: min(920px, 100%);
   text-wrap: balance;
   overflow-wrap: anywhere;
@@ -290,8 +290,8 @@ header {
   font-size: 15px;
   font-weight: 300;
   color: var(--ink-mid);
-  line-height: 1.65;
-  margin-bottom: 36px;
+  line-height: 1.7;
+  margin-bottom: 28px;
   max-width: min(760px, 100%);
   overflow-wrap: anywhere;
   hyphens: auto;
@@ -302,8 +302,8 @@ header {
   font-size: 17px;
   font-weight: 300;
   color: var(--ink-mid);
-  line-height: 1.65;
-  margin-bottom: 36px;
+  line-height: 1.7;
+  margin-bottom: 28px;
   max-width: min(760px, 100%);
   overflow-wrap: anywhere;
   hyphens: auto;
@@ -776,8 +776,8 @@ footer a { color: var(--navy-light); text-decoration: none; }
 .hero-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 1.25rem;
+  gap: 10px;
+  margin-top: 1.5rem;
   align-items: flex-start;
 }
 
@@ -786,10 +786,10 @@ footer a { color: var(--navy-light); text-decoration: none; }
   background: var(--grey-light);
   color: var(--ink-mid);
   border-radius: 20px;
-  padding: 4px 12px;
+  padding: 6px 12px;
   display: inline-flex;
   align-items: center;
-  line-height: 1.35;
+  line-height: 1.4;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
