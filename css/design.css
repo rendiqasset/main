@@ -1351,6 +1351,17 @@ button {
 
 @media (max-width: 900px) {
   .hero-inner { grid-template-columns: 1fr; }
+  .input-grid,
+  .foerder-grid,
+  .depot-grid,
+  .result-grid,
+  .scenario-grid,
+  .scenario-inputs,
+  .scenario-inputs.three,
+  .result-cols,
+  .mc-result-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
