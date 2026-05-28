@@ -184,8 +184,9 @@ header {
 }
 
 .hero:not(.index-hero) {
-  max-width: 1040px;
-  margin: 0 auto;
+  max-width: none;
+  width: 100%;
+  margin: 0;
   min-height: auto;
   padding: 2.5rem 2rem 2rem;
   display: block;
