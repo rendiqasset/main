@@ -18,7 +18,7 @@
 
   <div class="page-status-bar">
     <span>Depotstruktur-Tool</span>
-    <span class="page-status-pill">v0.1</span>
+    <span class="page-status-pill">v0.2</span>
     <span class="page-status-sub">Draft · Modell zur Asset-Allokation</span>
   </div>
 
@@ -38,12 +38,20 @@
       <div class="section-label">Asset-Allokation</div>
 
       <div class="card tool-panel">
-        <div class="panel-header">
+          <div class="panel-header">
           <div>
             <div class="section-title">Depots zusammenstellen</div>
             <p class="section-sub">Füge Assets hinzu, passe die Gewichte an und prüfe die interne Konsistenz des Modells.</p>
           </div>
-          <div class="row-actions"><button id="add-row">Asset hinzufügen</button></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="template-select" style="padding:6px;border-radius:6px;border:1px solid #e6e6e6">
+              <option value="">Vorlage wählen…</option>
+              <option value="aktienfonds">Aktienfonds</option>
+              <option value="mischfonds">Mischfonds</option>
+            </select>
+            <button id="insert-template">Einfügen</button>
+            <button id="add-row">Asset hinzufügen</button>
+          </div>
         </div>
 
         <div class="table-shell">
@@ -99,16 +107,68 @@
       document.getElementById('sum-val').textContent = Math.round(s*100)/100 + '%';
       return s;
     }
-    document.getElementById('add-row').addEventListener('click', ()=>{
+
+    // Templates for common asset types
+    const TEMPLATES = {
+      aktienfonds: {
+        label: 'Aktienfonds',
+        props: { TER: 0.2, aktienquote: 100, cashquote: 0, agio: 0 }
+      },
+      mischfonds: {
+        label: 'Mischfonds',
+        props: { TER: 0.8, aktienquote: 50, anleihenquote: 30, rohstoffquote: 10, cashquote: 10, agio: 1 }
+      }
+    };
+
+    function createRow(name, wt, templateKey){
       const tb = document.querySelector('#asset-table tbody');
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td><input type="text" value="Neues Asset" class="asset-name"></td><td><input type="number" value="0" min="0" max="100" class="asset-wt"></td><td><button class="del">Löschen</button></td>`;
+      tr.innerHTML = `<td><input type="text" value="${name||'Neues Asset'}" class="asset-name"></td><td><input type="number" value="${wt||0}" min="0" max="100" class="asset-wt"></td><td style="display:flex;gap:6px"><button class="details">Details</button><button class="del">Löschen</button></td>`;
       tb.appendChild(tr);
-      tr.querySelector('.del').addEventListener('click', e=>{tr.remove(); updateSum();});
+
+      // insert detail row
+      const dr = document.createElement('tr');
+      dr.classList.add('detail-row');
+      dr.style.display = 'none';
+      const detailHtmlParts = [];
+      detailHtmlParts.push('<td colspan="3">');
+      detailHtmlParts.push('<div style="display:flex;gap:12px;flex-wrap:wrap">');
+      // if template provided, populate props
+      const props = (templateKey && TEMPLATES[templateKey]) ? TEMPLATES[templateKey].props : {};
+      // common fields
+      detailHtmlParts.push(`<div style="min-width:140px"><label>TER (%)<br><input type="number" step="0.01" class="prop-ter" value="${props.TER||''}"></label></div>`);
+      detailHtmlParts.push(`<div style="min-width:140px"><label>Agio (%)<br><input type="number" step="0.01" class="prop-agio" value="${props.agio||0}"></label></div>`);
+      // dynamic ratio fields
+      if(props.aktienquote!==undefined) detailHtmlParts.push(`<div style="min-width:160px"><label>Aktienquote (%)<br><input type="number" class="prop-akt" value="${props.aktienquote}"></label></div>`);
+      if(props.anleihenquote!==undefined) detailHtmlParts.push(`<div style="min-width:160px"><label>Anleihenquote (%)<br><input type="number" class="prop-anl" value="${props.anleihenquote}"></label></div>`);
+      if(props.rohstoffquote!==undefined) detailHtmlParts.push(`<div style="min-width:160px"><label>Rohstoffquote (%)<br><input type="number" class="prop-roh" value="${props.rohstoffquote}"></label></div>`);
+      if(props.cashquote!==undefined) detailHtmlParts.push(`<div style="min-width:160px"><label>Cashquote (%)<br><input type="number" class="prop-cash" value="${props.cashquote}"></label></div>`);
+      detailHtmlParts.push('</div>');
+      detailHtmlParts.push('</td>');
+      dr.innerHTML = detailHtmlParts.join('');
+      tb.appendChild(dr);
+
+      tr.querySelector('.del').addEventListener('click', e=>{ tr.remove(); dr.remove(); updateSum(); });
+      tr.querySelector('.details').addEventListener('click', e=>{ dr.style.display = dr.style.display==='none'?'table-row':'none'; });
       tr.querySelector('.asset-wt').addEventListener('input', updateSum);
+      // hook detail inputs to some future logic if needed
+      return tr;
+    }
+    document.getElementById('add-row').addEventListener('click', ()=>{
+      createRow('Neues Asset', 0);
       updateSum();
     });
-    document.querySelectorAll('.del').forEach(b=>b.addEventListener('click', e=>{ e.target.closest('tr').remove(); updateSum(); }));
+    document.getElementById('insert-template').addEventListener('click', ()=>{
+      const key = document.getElementById('template-select').value;
+      if(!key) return alert('Bitte zuerst eine Vorlage wählen.');
+      const t = TEMPLATES[key];
+      const tr = createRow(t.label, 0, key);
+      // show details row immediately
+      const dr = tr.nextElementSibling;
+      if(dr && dr.classList.contains('detail-row')) dr.style.display = 'table-row';
+      updateSum();
+    });
+    document.querySelectorAll('.del').forEach(b=>b.addEventListener('click', e=>{ const tr = e.target.closest('tr'); const next = tr.nextElementSibling; tr.remove(); if(next && next.classList && next.classList.contains('detail-row')) next.remove(); updateSum(); }));
     document.querySelectorAll('.asset-wt').forEach(i=>i.addEventListener('input', updateSum));
 
     document.getElementById('compute').addEventListener('click', ()=>{
@@ -123,7 +183,30 @@
       // Simple risk proxy: Risk = weighted sum of assumed volatilities
       const vols = wts.map((_,i)=>{ const n=names[i].toLowerCase(); if(n.includes('aktien')) return 14; if(n.includes('anleihen')) return 6; if(n.includes('liquid')) return 1; return 8; });
       const estVol = Math.round(norm.reduce((s,w,i)=>s + (w/100)*vols[i],0)*100)/100;
-      document.getElementById('simple-metrics').textContent = 'Geschätzte Portfoliovola (vereinfachter Proxy): ~' + estVol + '% p.a.';
+      // Read TER / Agio from detail rows if present and compute weighted averages
+      const ters = Array.from(document.querySelectorAll('.prop-ter')).map(i=>parseFloat(i.value)||0);
+      const agios = Array.from(document.querySelectorAll('.prop-agio')).map(i=>parseFloat(i.value)||0);
+      // align lengths: if no detail inputs, arrays may be shorter; map by asset index via traversing rows
+      const tbRows = Array.from(document.querySelectorAll('#asset-table tbody tr')).filter(r=>!r.classList.contains('detail-row'));
+      let avgTer = 0, avgAgio = 0;
+      if(tbRows.length>0){
+        let terSum=0, agioSum=0;
+        tbRows.forEach((r,i)=>{
+          const next = r.nextElementSibling;
+          let ter = 0, agio = 0;
+          if(next && next.classList.contains('detail-row')){
+            const tIn = next.querySelector('.prop-ter');
+            const aIn = next.querySelector('.prop-agio');
+            ter = tIn?parseFloat(tIn.value)||0:0;
+            agio = aIn?parseFloat(aIn.value)||0:0;
+          }
+          terSum += (norm[i]/100)*ter;
+          agioSum += (norm[i]/100)*agio;
+        });
+        avgTer = Math.round(terSum*100)/100;
+        avgAgio = Math.round(agioSum*100)/100;
+      }
+      document.getElementById('simple-metrics').textContent = 'Geschätzte Portfoliovola (vereinfachter Proxy): ~' + estVol + '% p.a. · Durchschnittliche TER: ' + avgTer + '% · Durchschnittliches Agio: ' + avgAgio + '%';
     });
 
     updateSum();
